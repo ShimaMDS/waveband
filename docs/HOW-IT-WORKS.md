@@ -439,16 +439,18 @@ and `JoinSceneNotify] Begin [InstanceId: n]`. Then rebuild and check the boss HP
 | `wwmeter\tracker.py` | Fights: sources, credit, start and end, bar against log, bar percent into damage |
 | `wwmeter\gamedata.py`, `data\enemy_hp.json`, `data\part_shares.json` | Which placement an enemy is, its full HP and name from the game's data, and the share of a boss's HP each part is |
 | `wwmeter\update.py` | `wwmeter update`: fetch the game's data and rebuild `data\enemy_hp.json` |
-| `wwmeter\hud.py`, `capture.py`, `engine.py` | The boss bar and its title from a frame; frames of the game window; the log and screen threads |
+| `wwmeter\hud.py`, `ocr.py`, `capture.py`, `engine.py` | The boss bar and its title from a frame (`ocr.py` runs PaddleOCR's text recognizer, `data\ocr`, on ONNX Runtime); frames of the game window; the log and screen threads |
 | `wwmeter\server.py`, `app.py`, `overlay.py` | The local server, the wiring, the overlay window and tray |
 | `wwmeter\settings.py`, `ui\settings.js` | The settings page and the one-line settings export |
 | `wwmeter\selfupdate.py`, `signing.py` | Waveband's own updates, and Ed25519 signatures with the release key's public half |
 | `wwmeter\sessions.py`, `summary.py`, `changelog.py` | Session files, the copied summary, What changed |
 | `wwmeter\roster.py`, `hotkeys.py`, `selftest.py`, `dmgnum.py` | Names and elements, keys, the self-test, the optional number reader |
 | `ui\` | The overlay and dashboard page and its themes; `base.css` holds what every theme shares |
-| `data\` | Characters, hand-written names, digit templates, part shares, the boss HP data |
+| `data\` | Characters, hand-written names, digit templates, part shares, the boss HP data, the text recognizer's model (`data\ocr`) |
 | `assets\`, `tools\installer\` | The logo and icons; the Inno Setup installer |
 | `docs\` | This file, the release steps and the README's pictures |
 
-Tests: `.venv\Scripts\python -m unittest discover -s tests`. `.gitignore` keeps out everything a
+Tests: `.venv\Scripts\python -m unittest discover -s tests`, after
+`.venv\Scripts\python -m pip install -r requirements-dev.txt` (OpenCV and RapidOCR, for the tests
+and the tools; the meter itself needs neither). `.gitignore` keeps out everything a
 running copy writes (`config.json`, logs, `sessions\`, `learned_parts.json`) and test recordings.

@@ -1,0 +1,6 @@
+# For the tests and the tools in tools\, on top of what the meter needs.
+-r requirements.txt
+# the damage-number reader (off) and the tools that build and grade it
+opencv-python
+# tools\collect_number_samples.py, and where data\ocr\ch_PP-OCRv3_rec_infer.onnx comes from
+rapidocr-onnxruntime

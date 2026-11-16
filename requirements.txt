@@ -1,7 +1,7 @@
 numpy
-opencv-python
 pywin32
 websockets>=13
-rapidocr-onnxruntime
 bettercam
 PySide6
+onnxruntime
+Pillow

@@ -5,14 +5,24 @@ from __future__ import annotations
 import csv
 import os
 
-import cv2
-
 from .config import Config
 from .engine import ScreenReader
 from .gamedata import PartShares, enemy_data
 from .logparse import parse_line
 from .roster import Roster
 from .tracker import Tracker
+
+
+def read_frame(path: str):
+    """A recorded frame as a BGR array, the way the capture hands frames over; None if unreadable."""
+    import numpy as np
+    from PIL import Image
+
+    try:
+        with Image.open(path) as image:
+            return np.ascontiguousarray(np.asarray(image.convert("RGB"))[..., ::-1])
+    except (OSError, ValueError):
+        return None
 
 
 def _events(folder: str, use_frames: bool, frame_step: int):
@@ -53,7 +63,7 @@ def replay(
             if event is not None:
                 tracker.on_log(event, now)
         else:
-            frame = cv2.imread(os.path.join(folder, "frames", payload))
+            frame = read_frame(os.path.join(folder, "frames", payload))
             if frame is not None:
                 reader.process(frame, now)
         tracker.tick(now)

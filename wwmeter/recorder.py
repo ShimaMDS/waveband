@@ -11,7 +11,7 @@ import queue
 import threading
 import time
 
-import cv2
+from PIL import Image
 
 from .capture import GameCapture
 from .config import ROOT, Config
@@ -31,7 +31,8 @@ class _FrameWriter(threading.Thread):
             if job is None:
                 return
             path, frame = job
-            cv2.imwrite(path, frame, [cv2.IMWRITE_JPEG_QUALITY, self._quality])
+            # frames are BGR; JPEG with 4:2:0 colour, as OpenCV wrote the earlier recordings
+            Image.fromarray(frame[..., 2::-1]).save(path, "JPEG", quality=self._quality, subsampling=2)
 
     def submit(self, path: str, frame) -> None:
         try:

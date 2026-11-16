@@ -28,7 +28,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # the other tool
 from wwmeter import __version__  # noqa: E402
 from wwmeter.config import NAME  # noqa: E402
 
-DATA_FILES = ("characters.json", "names.json", "enemy_hp.json", "part_shares.json", "digits.npz")
+DATA_FILES = ("characters.json", "names.json", "enemy_hp.json", "part_shares.json", "digits.npz",
+              "ocr/ch_PP-OCRv3_rec_infer.onnx", "ocr/NOTICE.txt")
 SOURCE_FILES = ("requirements.txt", "run.bat")
 SOURCE_NOTE = (
     "This is the source Waveband.exe was built from, included so you can read what it does.\n\n"
@@ -51,8 +52,10 @@ def build_exe(work: str) -> str:
         "--specpath", work,
         "--paths", ROOT,
         "--collect-submodules", "wwmeter",
-        # the text reader loads its models and settings from its own folder at run time
-        "--collect-all", "rapidocr_onnxruntime",
+        # OpenCV is only for the damage-number reader, which is off and stays out of the build
+        # (wwmeter/dmgnum.py says so on the meter if it is turned on); the boss-title reader
+        # needs ONNX Runtime alone, with its model in data\ocr
+        "--exclude-module", "cv2",
         "--exclude-module", "tkinter",
         os.path.join(ROOT, "tools", "exe_entry.py"),
     ]
@@ -131,8 +134,6 @@ def trim(release: str) -> float:
     # of dialogs the meter never shows
     doomed += _listed(os.path.join(qt, "translations", "qtwebengine_locales"), lambda f: f == "en-US.pak")
     doomed += _listed(os.path.join(qt, "translations"), lambda f: not f.endswith(".qm"))
-    # video files are never opened
-    doomed += _listed(os.path.join(internal, "cv2"), lambda f: not f.startswith("opencv_videoio_ffmpeg"))
     # AVIF pictures are never opened; Pillow goes without when the module is absent
     doomed += _listed(os.path.join(internal, "PIL"), lambda f: not f.startswith("_avif"))
     # a software stand-in for OpenGL: the overlay is drawn through Direct3D
@@ -200,6 +201,7 @@ def main(argv: list[str] | None = None) -> int:
     shutil.copytree(os.path.join(ROOT, "ui"), os.path.join(release, "ui"))
     os.makedirs(os.path.join(release, "data"))
     for file in DATA_FILES:
+        os.makedirs(os.path.dirname(os.path.join(release, "data", file)), exist_ok=True)
         shutil.copy2(os.path.join(ROOT, "data", file), os.path.join(release, "data", file))
     # the meter reads the changelog to say what changed; the licence goes with every copy; the
     # README's pictures and the write-ups are in docs

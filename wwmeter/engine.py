@@ -77,9 +77,9 @@ class ScreenReader:
             return ""
         try:
             if self._ocr is None:
-                from rapidocr_onnxruntime import RapidOCR
+                from .ocr import TextReader
 
-                self._ocr = RapidOCR()
+                self._ocr = TextReader()
             return hud.read_boss_title(frame, self._ocr)
         except Exception:  # noqa: BLE001 - the title is a nicety; never let OCR break the meter
             self._ocr_failed = True

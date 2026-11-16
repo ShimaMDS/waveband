@@ -93,6 +93,7 @@ git clone https://github.com/ShimaMDS/waveband.git
 cd waveband
 run.bat                                        # sets up .venv on first run, then starts the meter
 .venv\Scripts\python -m wwmeter run --demo     # a made-up fight, no game needed
+.venv\Scripts\python -m pip install -r requirements-dev.txt   # for the tests and tools\
 .venv\Scripts\python -m unittest discover -s tests
 ```
 
@@ -109,8 +110,10 @@ Python 3.11 or newer. Inside the code, Waveband is still called `wwmeter`.
 - **Ideas:** the FFXIV overlays [Ember Overlay](https://github.com/GoldenChrysus/ffxiv-ember-overlay)
   and [kagerou](https://github.com/hibiyasleep/kagerou), and [ok-ww](https://github.com/ok-oldking/ok-wuthering-waves)'s
   self-updating installer.
-- **Built with** Python, [Qt for Python](https://doc.qt.io/qtforpython-6/), OpenCV, NumPy,
-  RapidOCR, ONNX Runtime, BetterCam, websockets, pywin32 and Pillow; packaged with PyInstaller and
+- **Built with** Python, [Qt for Python](https://doc.qt.io/qtforpython-6/), NumPy, ONNX Runtime,
+  BetterCam, websockets, pywin32 and Pillow; the boss title is read with
+  [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)'s text recognizer as packaged by
+  [RapidOCR](https://github.com/RapidAI/RapidOCR) (Apache-2.0, `data/ocr`); packaged with PyInstaller and
   [Inno Setup](https://jrsoftware.org/isinfo.php).
 
 ## License

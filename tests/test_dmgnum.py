@@ -6,10 +6,14 @@ frames is measured by tools/grade_number_reader.py, and it is far from perfect t
 
 import unittest
 
-import cv2
 import numpy as np
 
-from wwmeter import dmgnum
+try:
+    import cv2
+except ImportError:  # the number reader is off, and OpenCV is only in requirements-dev.txt
+    raise unittest.SkipTest("OpenCV is not installed (requirements-dev.txt)")
+
+from wwmeter import dmgnum  # noqa: E402
 
 TEMPLATES = dmgnum.Templates()
 ORANGE = (40, 140, 255)  # BGR, inside the fusion band
