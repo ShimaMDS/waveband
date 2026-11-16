@@ -1,5 +1,7 @@
 # What changed
 
+## 0.3.1 (not released yet)
+
 ## 0.3.0
 
 - Six new themes, one for each element: Glacio, Fusion, Electro, Aero, Spectro and Havoc. Each
