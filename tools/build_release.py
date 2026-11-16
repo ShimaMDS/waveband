@@ -40,13 +40,59 @@ SOURCE_NOTE = (
 SELFTEST_BAT = '@echo off\r\ncd /d "%~dp0"\r\nstart "" /wait Waveband.exe selftest\r\nif exist selftest.txt start "" notepad selftest.txt\r\n'
 
 
+def version_numbers(version: str) -> tuple[int, int, int, int]:
+    """A version as the four numbers Windows keeps in a program's file properties: 0.3.0.dev0
+    and 0.3.0-beta.2 are 0.3.0.0, 0.2.1 is 0.2.1.0."""
+    numbers = []
+    for part in version.replace("-", ".").split("."):
+        if not part.isdigit():
+            break
+        numbers.append(int(part))
+    return tuple((numbers + [0, 0, 0, 0])[:4])
+
+
+def version_info(version: str) -> str:
+    """Waveband.exe's version information, as PyInstaller's --version-file reads it: what Windows
+    shows under the file's Properties, Details. A program with none looks like an anonymous one
+    to the antivirus engines that score files by machine learning; every signed library beside
+    it has this."""
+    numbers = version_numbers(version)
+    strings = {
+        "CompanyName": "Waveband",
+        "FileDescription": "Waveband, a damage meter for Wuthering Waves",
+        "FileVersion": version,
+        "InternalName": NAME,
+        "LegalCopyright": "Copyright (c) Waveband contributors. Free software: AGPL-3.0-or-later.",
+        "OriginalFilename": f"{NAME}.exe",
+        "ProductName": NAME,
+        "ProductVersion": version,
+        "Comments": "https://github.com/ShimaMDS/waveband",
+    }
+    table = ",\n          ".join(f"StringStruct({k!r}, {v!r})" for k, v in strings.items())
+    return (
+        "VSVersionInfo(\n"
+        f"  ffi=FixedFileInfo(filevers={numbers}, prodvers={numbers}, mask=0x3f, flags=0x0,\n"
+        "                    OS=0x40004, fileType=0x1, subtype=0x0, date=(0, 0)),\n"
+        "  kids=[\n"
+        "    StringFileInfo([StringTable('040904B0', [\n"
+        f"          {table}])]),\n"
+        "    VarFileInfo([VarStruct('Translation', [1033, 1200])]),\n"
+        "  ])\n"
+    )
+
+
 def build_exe(work: str) -> str:
     """Run PyInstaller; returns the folder holding Waveband.exe and _internal."""
+    os.makedirs(work, exist_ok=True)
+    version_file = os.path.join(work, "version-info.txt")
+    with open(version_file, "w", encoding="utf-8") as fh:
+        fh.write(version_info(__version__))
     command = [
         sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "--windowed",
         "--name", NAME,
         # drawn by tools/make_logo.py
         "--icon", os.path.join(ROOT, "assets", "waveband.ico"),
+        "--version-file", version_file,
         "--distpath", os.path.join(work, "dist"),
         "--workpath", os.path.join(work, "build"),
         "--specpath", work,
