@@ -20,7 +20,7 @@ recordings/
 release/
 data/number_samples.pkl
 
-# The owner's own scratch folder (screenshots handed over while working)
+# Local scratch folder
 TMP/
 
 # One file of fights per launch of the meter
@@ -29,11 +29,11 @@ sessions/
 # What share of a boss's HP each of its parts is, as learned on this PC
 learned_parts.json
 
-# Private: the roadmap and the full working notes. Never published.
+# Local notes, not published
 private/
 
-# theme previews for looking over locally (tools/theme_previews.py): large, never pushed
+# Theme previews made locally by tools/theme_previews.py
 assets/themes/
 
-# the logo concepts (tools/make_logo.py draws them): kept private, on this PC only
+# Logo concepts made locally by tools/make_logo.py
 assets/logo/concepts/
