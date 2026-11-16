@@ -11,8 +11,8 @@
   now read by the same text recognizer as before, run on its own, without the larger libraries
   that came with it; it reads them the same way, and a little faster.
 - Beta updates: under Settings, Game, "Updates to take" can be Stable or Beta. Stable tells you
-  about releases only; Beta also about test versions of the next release (0.3.0-beta.1, beta.2,
-  ...) and still moves on to each stable version. Until you pick, a beta of Waveband is on Beta
+  about releases (0.3.0, then 0.4.0) only; Beta also about the test versions between them (0.3.1,
+  0.3.2, ...) and still moves on to each stable version. Until you pick, a beta of Waveband is on Beta
   and any other version on Stable.
 - Clearer names on the settings page: Keys is now Keybinds, Meter is DPS Meter, and Another PC
   is Import / Export.

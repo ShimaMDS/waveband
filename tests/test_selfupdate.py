@@ -170,8 +170,19 @@ class ChannelTest(unittest.TestCase):
     def test_until_one_is_chosen_a_beta_follows_beta_and_the_rest_stable(self):
         self.assertEqual(selfupdate.effective_channel("", "0.3.0-beta.1"), "beta")
         self.assertEqual(selfupdate.effective_channel("", "0.3.0"), "stable")
-        self.assertEqual(selfupdate.effective_channel("", "0.2.1"), "stable")
+        self.assertEqual(selfupdate.effective_channel("", "0.4.0"), "stable")
         self.assertEqual(selfupdate.effective_channel("", "0.3.0.dev0"), "stable")
+
+    def test_versions_between_stable_releases_are_betas(self):
+        # from 0.3.0 on, only x.y.0 is stable: 0.3.1, 0.3.2, ... go to Beta
+        for version in ("0.3.1", "0.3.2", "0.3.12", "0.4.0-beta.1", "0.3.1.dev0"):
+            self.assertTrue(selfupdate.is_beta(version), version)
+            self.assertEqual(selfupdate.effective_channel("", version), "beta")
+        for version in ("0.3.0", "0.4.0", "1.0.0", "0.4.0.dev0"):
+            self.assertFalse(selfupdate.is_beta(version), version)
+        self.assertTrue(selfupdate.version_key("0.3.0") < selfupdate.version_key("0.3.1")
+                        < selfupdate.version_key("0.3.2") < selfupdate.version_key("0.4.0-beta.1")
+                        < selfupdate.version_key("0.4.0"))
         self.assertEqual(selfupdate.effective_channel("nonsense", "0.3.0-beta.2"), "beta")
 
     def test_a_beta_on_its_own_hears_of_the_next_beta(self):

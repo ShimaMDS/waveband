@@ -45,18 +45,21 @@ Windows shows an "unknown publisher" warning and some antivirus programs flag it
 
 | Branch | What it holds | Versions | Published as |
 |---|---|---|---|
-| `main` | Day-to-day work toward the next version | that version with `.dev0` (0.3.0.dev0) | nothing |
-| `beta` | Test versions of the next version | 0.3.0-beta.1, 0.3.0-beta.2, ... | GitHub pre-releases |
-| `stable` | What everyone gets, and quick fixes to it | 0.2.0, 0.2.1, 0.2.2, then 0.3.0 | ordinary GitHub releases |
+| `main` | Day-to-day work toward the next version | that version with `.dev0` (0.3.1.dev0) | nothing |
+| `beta` | The versions between stable ones | 0.3.1, 0.3.2, ... (and 0.4.0-beta.1 if wanted) | GitHub pre-releases |
+| `stable` | What everyone gets | x.y.0 only: 0.3.0, then 0.4.0 | ordinary GitHub releases |
 
-Work happens on `main`. **A beta:** merge `main` into `beta`, set the version to the next beta
-(`0.3.0-beta.1`), build and sign from `beta`, tag `v0.3.0-beta.1` there, and publish with
-`gh release create v0.3.0-beta.1 --prerelease ...`. Its notes go in the next version's changelog
-section ("0.3.0 (beta)"). **A quick fix to stable:** fix it on `stable`, set the version to the
-next patch (`0.2.1`), add a changelog section for it (`## 0.2.1`, no date), and publish an ordinary release; then
-merge `stable` into `main` so the fix is not lost. **The next stable version:** merge `beta` into
-`stable`, set the version to `0.3.0`, make its heading plain `## 0.3.0`, and publish an ordinary release; then set
-`main` to the next `.dev0`.
+From 0.3.0 on, only x.y.0 is a stable release: every version in between is a beta (owner,
+2026-11-17), and Waveband treats it as one (`selfupdate.is_beta`). 0.2.0 came before this.
+
+Work happens on `main`. **A beta:** merge `main` into `beta`, set the version (`0.3.1`), head its
+changelog section `## 0.3.1 (beta)`, build and sign from `beta`, tag `v0.3.1` there, and publish
+with `gh release create v0.3.1 --prerelease ...`. A fix that can't wait goes out the same way, as
+the next beta. **The next stable version:** merge `main` into `beta` and `beta` into `stable`,
+set the version to `0.4.0`, give its changelog section the plain heading `## 0.4.0` (gathering
+the notes of the betas before it), and publish an ordinary release from `stable`; then
+fast-forward `beta` to it, merge `stable` back into `main`, and set `main` to the next
+`.dev0` (0.4.1.dev0).
 
 Installed copies on the Stable channel only see ordinary releases; on Beta (Settings, Game,
 "Updates to take"; a beta build is on Beta until the user picks) they see pre-releases too, and still move on to each stable version.
