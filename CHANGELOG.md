@@ -9,6 +9,9 @@
   page marks any that won't reach Waveband. Holding Alt also brings up the game's cursor, handy
   for moving the meter.
 - "Hide the meter between fights" hides it 12 seconds after a fight ends, not 20.
+- The copied fight summary is written for Discord: the fight as a small heading, the DPS in
+  bold, the characters as a numbered list and the fine print in small grey text. Its columns no
+  longer come out ragged.
 - Waveband reserves about 590 MB less memory (commit size 775 MB down to about 185 MB on a
   16-thread CPU). NumPy's maths library set aside a work buffer for every CPU thread and almost
   never used it; Waveband needs only one.

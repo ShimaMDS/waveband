@@ -71,15 +71,18 @@ list on the dashboard's Fights page. They are only read: new fights still go to 
 session. Session files are plain JSON and are never deleted by Waveband.
 
 **Copying a fight.** "Copy this fight's summary" puts the fight on show on the clipboard as a few
-lines of text:
+lines written in Discord's markdown, ready to paste into a chat:
 
-    Fallacy of No Return: Tethys System (Lv 70) | 1:06 | 682,649 damage | 10,293 DPS | 100% of 682,649 HP
-    Hiyuki       602,165 (88.2%)  9,080 DPS
-    Lynae        54,522 (8.0%)  822 DPS
-    Shorekeeper  25,963 (3.8%)  391 DPS
-    Measured from the boss HP bar and the boss's HP from the game's data. Split by who was on field. Waveband 0.2.0
+    ### Fallacy of No Return: Tethys System (Lv 70)
+    **10,293 DPS** · 682,649 damage · 1:06 · 100% of its 682,649 HP
+    1. **Hiyuki** · 9,080 DPS · 602,165 (88.2%)
+    2. **Lynae** · 822 DPS · 54,522 (8.0%)
+    3. **Shorekeeper** · 391 DPS · 25,963 (3.8%)
+    -# Measured from the boss HP bar and the boss's HP from the game's data. Split by who was on field. Waveband 0.3.1
 
-Nothing is sent anywhere.
+Discord shows the fight as a small heading, the DPS in bold, the characters as a numbered list
+and the last line as small grey text, on a phone too. Pasted somewhere without markdown, the few
+marks stay and the text still reads. Nothing is sent anywhere.
 
 **One-line meter, hiding, screenshots.** Alt+Shift+F8 shrinks the meter to the clock and the damage
 per second; anything it needs to explain is still shown underneath. "Hide the meter between
