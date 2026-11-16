@@ -36,8 +36,23 @@ The zip never contains `config.json`, logs, `recordings\`, `tests\` or
 before it went out; do that again for any zip built by other means. The .exe is unsigned, so
 Windows shows an "unknown publisher" warning and some antivirus programs flag it.
 
-**History.** The repository's history starts at 0.2.0. A release needs nothing special: commit
-on `main`, tag `v<version>`, push `main` and the tag.
+**Branches and versions.**
+
+| Branch | What it holds | Versions | Published as |
+|---|---|---|---|
+| `main` | Day-to-day work | the next version with `.dev0` | nothing |
+| `beta` | What beta testers get | the ones between stable releases: 0.2.1 to 0.2.9 | GitHub pre-releases |
+| `stable` | What everyone gets | x.y.0: 0.2.0, 0.3.0 | ordinary GitHub releases |
+
+Work happens on `main`. For a beta, merge `main` into `beta`, set the version (say 0.2.1) and
+date its changelog section, build and sign from `beta`, tag `v0.2.1` there, and publish with
+`gh release create v0.2.1 --prerelease ...`. For a stable release, merge `beta` into `stable`,
+set the version to the next x.y.0, and publish an ordinary release from `stable`. Afterwards
+merge the release branch back into `main` and set `main` to the next `.dev0`.
+
+Installed copies on the Stable channel (the default) only see ordinary releases; on Beta (Settings,
+The game, "Updates to take") they see pre-releases too, and still move on to each stable version.
+GitHub never treats a pre-release as the latest release. The repository's history starts at 0.2.0.
 
 **The release key.** `tools\release_key.py new` made it once (2026-11-16). Its private half is
 `%USERPROFILE%\.waveband\release-signing-key.txt`, outside this folder, and its public half is
@@ -73,3 +88,5 @@ Before publishing a release, every line should hold:
 - `SHA256SUMS.txt.sig` checks out (`tools\release_key.py verify <out>\SHA256SUMS.txt`), and the
   release has the setup, the zip, the checksums and the signature, tagged `v<version>`.
 - `REPO` in `wwmeter\selfupdate.py` names the repository the release goes to.
+- Published from the right branch: a beta (x.y.1 to x.y.9) from `beta` as a pre-release, a stable
+  version (x.y.0) from `stable` as an ordinary release.

@@ -78,13 +78,27 @@ def _get(url: str):
     return urllib.request.urlopen(request, timeout=_TIMEOUT)
 
 
-def latest(repo: str = "") -> Release | None:
-    """The newest release, or None when the repository has none (or none with an installer)."""
+# Update channels. Stable releases are the x.y.0 versions, published as ordinary GitHub
+# releases from the `stable` branch; betas are the versions between them (0.2.1 to 0.2.9),
+# published as pre-releases from `beta`. "stable" sees only the first; "beta" sees both, so a
+# beta user moves on to the next stable version as well.
+CHANNELS = ("stable", "beta")
+
+
+def latest(repo: str = "", channel: str = "stable") -> Release | None:
+    """The newest release on ``channel``, or None when the repository has none (or none with an
+    installer)."""
     repo = repo or REPO
     if not repo:
         raise Failed("Update checks are not set up in this build.")
     try:
-        with _get(f"{API}/repos/{repo}/releases/latest") as response:
+        if channel == "beta":
+            with _get(f"{API}/repos/{repo}/releases?per_page=30") as response:
+                listed = json.load(response)
+            releases = [_release(repo, data) for data in listed if isinstance(data, dict) and not data.get("draft")]
+            releases = [r for r in releases if r is not None]
+            return max(releases, key=lambda r: version_key(r.version), default=None)
+        with _get(f"{API}/repos/{repo}/releases/latest") as response:  # never a pre-release
             data = json.load(response)
     except urllib.error.HTTPError as exc:
         if exc.code == 404:
@@ -92,6 +106,10 @@ def latest(repo: str = "") -> Release | None:
         raise Failed(f"GitHub answered {exc.code}. Try again later.") from exc
     except (OSError, ValueError) as exc:
         raise Failed(f"Couldn't reach GitHub ({getattr(exc, 'reason', None) or exc}).") from exc
+    return _release(repo, data)
+
+
+def _release(repo: str, data: dict) -> Release | None:
     version = str(data.get("tag_name") or "").lstrip("vV")
     assets = {str(a.get("name")): a for a in data.get("assets") or [] if isinstance(a, dict)}
     setup = next((a for name, a in assets.items() if _SETUP.match(name)), None)
@@ -196,8 +214,9 @@ class Updates:
     meter, the tray and the settings page show."""
 
     def __init__(self, enabled: Callable[[], bool], auto: Callable[[], bool], quit_app: Callable[[], None],
-                 tell: Callable[[str], None]) -> None:
+                 tell: Callable[[str], None], channel: Callable[[], str] = lambda: "stable") -> None:
         self._enabled, self._auto, self._quit, self._tell = enabled, auto, quit_app, tell
+        self._channel = channel
         self._lock = threading.Lock()
         self._busy = False
         self._stop = threading.Event()
@@ -212,6 +231,7 @@ class Updates:
             "status": self.status, "line": self.line, "current": __version__,
             "latest": release.version if release else "", "page": release.page if release else "",
             "installs": installed(), "checked_at": self.checked_at, "set_up": bool(REPO),
+            "channel": self._channel(),
         }
 
     def start(self) -> None:
@@ -240,7 +260,7 @@ class Updates:
         try:
             self.status, self.line = "checking", "Looking for a newer version"
             try:
-                release = latest()
+                release = latest(channel=self._channel())
             except Failed as why:
                 self.status, self.line = "error", str(why)
                 return

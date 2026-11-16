@@ -83,7 +83,8 @@ Only active while the game is in front. Change them in Settings.
 - No per-skill damage, crits or healing: the game's log doesn't have them.
 - Nothing about you or your game is sent anywhere. Waveband goes online only to check for its own
   updates (you can turn that off) and, when you ask, to fetch boss data after a patch.
-- Updates are only installed if they carry Waveband's own signature.
+- Updates are only installed if they carry Waveband's own signature. Want new versions early?
+  Switch *Updates to take* to Beta in Settings.
 
 **Something wrong?** Run *Waveband self-test* from the Start menu (or `selftest.bat` in the zip)
 and attach the `selftest.txt` it makes to [a new issue](../../issues/new/choose). More fixes are

@@ -161,6 +161,8 @@ class Config:
     check_updates: bool = True
     # Install a newer version at start without asking first (an installed copy only).
     auto_update: bool = False
+    # Which updates to take: "stable" (x.y.0 releases only) or "beta" (the versions between too).
+    update_channel: str = "stable"
 
     @property
     def log_path(self) -> str:

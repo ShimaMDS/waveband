@@ -18,6 +18,7 @@
     importUse: $("set-import-use"), figures: $("set-figures"),
     tablesState: $("set-tables-state"), tablesUpdate: $("set-tables-update"),
     appState: $("set-app-state"), appCheck: $("set-app-check"), appInstall: $("set-app-install"),
+    channel: $("set-update_channel"),
     figureDecimals: $("set-figure_decimals"), shareDecimals: $("set-share_decimals"),
   };
   const FLAGS = ["compact", "show_keys", "hide_between_fights", "only_over_game", "hide_from_capture",
@@ -403,6 +404,7 @@
     }
     for (const flag of FLAGS) $("set-" + flag).checked = Boolean(s[flag]);
     if (!busy(part.log)) part.log.value = s.log_dir;
+    if (!busy(part.channel)) part.channel.value = s.update_channel || "stable";
     setText(part.logState, s.log_found
       ? "The meter is reading Client.log in this folder."
       : "There is no Client.log in this folder. The game writes one when it starts.");
@@ -470,6 +472,7 @@
     setText(part.appInstall, u.installs ? `Install ${u.latest}` : `Download ${u.latest}`);
   }
   part.appCheck.addEventListener("click", () => send({ cmd: "check_app" }));
+  part.channel.addEventListener("change", () => change({ update_channel: part.channel.value }));
   part.appInstall.addEventListener("click", () => send({ cmd: "install_app" }));
   stateWatchers.push((state) => drawApp((state.ui || {}).app));
   stateWatchers.push((state) => drawTables((state.ui || {}).tables));

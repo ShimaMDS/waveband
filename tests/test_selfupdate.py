@@ -19,8 +19,10 @@ OTHER_KEY = signing.new_secret()
 class FakeGitHub:
     """GitHub's releases API and the release's files, served on 127.0.0.1."""
 
-    def __init__(self, version="9.1.0", sums=None, setup=SETUP, status=200, key=KEY, signed=True):
+    def __init__(self, version="9.1.0", sums=None, setup=SETUP, status=200, key=KEY, signed=True, others=()):
         self.version, self.setup, self.status, self.signed = version, setup, status, signed
+        # more releases, for the beta channel's list: (version, pre-release, draft)
+        self.others = list(others)
         self.sums = sums if sums is not None else (
             f"{hashlib.sha256(setup).hexdigest()}  Waveband-{version}-setup.exe\n"
             f"{'0' * 64}  Waveband-{version}.zip\n")
@@ -47,6 +49,14 @@ class FakeGitHub:
                         ] + ([{"name": "SHA256SUMS.txt.sig", "size": 129, "browser_download_url": f"{base}/sig"}]
                              if owner.signed else []),
                     }).encode()
+                elif self.path == "/repos/someone/waveband/releases?per_page=30":
+                    def entry(version, pre, draft):
+                        return {"tag_name": f"v{version}", "prerelease": pre, "draft": draft,
+                                "html_url": f"{base}/release/{version}", "assets": [
+                                    {"name": f"Waveband-{version}-setup.exe", "size": 1, "browser_download_url": f"{base}/setup"},
+                                    {"name": "SHA256SUMS.txt", "size": 1, "browser_download_url": f"{base}/sums"}]}
+                    body = json.dumps([entry(owner.version, False, False)]
+                                      + [entry(*other) for other in owner.others]).encode()
                 elif self.path == "/setup":
                     body = owner.setup
                 elif self.path == "/sums":
@@ -108,6 +118,32 @@ class ReleaseTest(unittest.TestCase):
         with mock.patch.object(selfupdate, "API", "http://127.0.0.1:9"), \
                 mock.patch.object(selfupdate, "REPO", "someone/waveband"), self.assertRaises(selfupdate.Failed):
             selfupdate.latest()
+
+
+class ChannelTest(unittest.TestCase):
+    def test_stable_sees_only_the_stable_release(self):
+        with FakeGitHub(version="9.1.0", others=[("9.1.3", True, False)]):
+            self.assertEqual(selfupdate.latest(channel="stable").version, "9.1.0")
+
+    def test_beta_sees_the_newest_of_both(self):
+        with FakeGitHub(version="9.1.0", others=[("9.1.3", True, False), ("9.1.2", True, False)]):
+            self.assertEqual(selfupdate.latest(channel="beta").version, "9.1.3")
+
+    def test_beta_moves_on_to_the_next_stable_version(self):
+        with FakeGitHub(version="9.2.0", others=[("9.1.9", True, False)]):
+            self.assertEqual(selfupdate.latest(channel="beta").version, "9.2.0")
+
+    def test_a_draft_is_never_offered(self):
+        with FakeGitHub(version="9.1.0", others=[("9.9.9", True, True)]):
+            self.assertEqual(selfupdate.latest(channel="beta").version, "9.1.0")
+
+    def test_the_checker_asks_the_channel_set(self):
+        updates = selfupdate.Updates(enabled=lambda: True, auto=lambda: False, quit_app=lambda: None,
+                                     tell=lambda _t: None, channel=lambda: "beta")
+        with FakeGitHub(version="0.0.1", others=[("9.1.3", True, False)]):
+            updates.check()
+        self.assertEqual((updates.status, updates.state()["latest"], updates.state()["channel"]),
+                         ("available", "9.1.3", "beta"))
 
 
 class DownloadTest(unittest.TestCase):

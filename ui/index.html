@@ -182,6 +182,13 @@
           <button id="set-app-install" type="button" class="button main" hidden>Install</button>
         </div>
         <div class="set-rows">
+          <label class="set-row"><span class="set-name">Updates to take
+              <small class="set-note">Beta gets the versions between stable ones first (0.2.1 to
+                0.2.9) and still moves on to each stable version.</small></span>
+            <select id="set-update_channel">
+              <option value="stable">Stable</option>
+              <option value="beta">Beta</option>
+            </select></label>
           <label class="set-row"><span class="set-name">Look for updates</span>
             <span class="switch"><input id="set-check_updates" type="checkbox"><i></i></span></label>
           <label class="set-row"><span class="set-name">Install updates at start without asking
