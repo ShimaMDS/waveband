@@ -4,9 +4,10 @@ How a Waveband release is built, signed and published. The checklist at the end 
 to hold before one goes out.
 
 1. Set the version in `wwmeter\__init__.py` (between releases it is the next one with `.dev0`
-   on the end, which the meter treats as that version). Give the top section of `CHANGELOG.md`
-   its date in place of "not released yet"; its notes are what users are shown after the
-   update, so they are written for users. Run the tests (one fails when the top section is not
+   on the end, which the meter treats as that version). Head the top section of `CHANGELOG.md`
+   with the version alone (`## 0.3.0`, no date) in place of "not released yet", or
+   `## 0.3.0 (beta)` for a beta; its notes are what users are shown after the update, so they
+   are written for users. Run the tests (one fails when the top section is not
    for the version in the source), and bring this file and `tools\START HERE.txt` (the
    testers' one-page guide) up to date.
 2. In a fresh environment, outside this folder:
