@@ -14,7 +14,7 @@ mark in the Resonance Halo family, drawn here too, with a sheet per element in
 
 It also draws the other concepts, for asking people which they like: each in
 ``assets\\logo\\concepts\\<letter>-<name>\\`` with its own sheet, and all five side by side in
-``assets\\logo\\concepts\\overview.png``.
+``assets\\logo\\concepts\\overview.png``. That folder is kept out of git, on this PC only.
 
 Everything is drawn here from straight lines, arcs and polygons: no font file and nothing taken
 from the game. The designs borrow the game's manner only: dark grounds, a metal accent and an

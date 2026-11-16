@@ -34,3 +34,6 @@ private/
 
 # theme previews for looking over locally (tools/theme_previews.py): large, never pushed
 assets/themes/
+
+# the logo concepts (tools/make_logo.py draws them): kept private, on this PC only
+assets/logo/concepts/
