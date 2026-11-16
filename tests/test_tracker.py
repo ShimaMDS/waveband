@@ -483,17 +483,30 @@ class EarlierFightsTest(unittest.TestCase):
         snap = self.t.snapshot(400.0)
         self.assertEqual((snap["encounter"]["id"], snap["view"]), (newest, None))
 
-    def test_a_fight_goes_on_being_measured_behind_an_earlier_one(self):
+    def test_a_new_fight_takes_the_meter_back_from_an_earlier_one(self):
         self.fight(self.t, 100.0, entity=1)
         self.fight(self.t, 200.0, entity=2, hit=500)
         self.t.view_step(-1)
-        old = self.t.snapshot(250.0)["encounter"]["id"]
+        self.assertIsNotNone(self.t.snapshot(250.0)["view"])
         for i in range(4):  # a new fight starts while the old one is on show
             self.t.on_log(life(10_000 - 700 * i, 300.0 + i, entity=3), 300.0 + i)
         snap = self.t.snapshot(303.5)
-        self.assertEqual(snap["encounter"]["id"], old)  # still the one asked for
+        self.assertIsNone(snap["view"])
+        self.assertTrue(snap["encounter"]["live"])
+        self.assertEqual(snap["encounter"]["damage"], 2_100)
+
+    def test_a_fight_goes_on_being_measured_behind_an_earlier_one(self):
+        # stepping back while a fight runs still works, and the fight is still measured
+        self.fight(self.t, 100.0, entity=1)
+        self.t.on_log(life(10_000, 300.0, entity=3), 300.0)
+        self.t.on_log(life(9_300, 301.0, entity=3), 301.0)
+        self.t.view_step(-1)
+        snap = self.t.snapshot(301.5)
         self.assertTrue(snap["view"]["running"])
-        self.t.view_step(1)
+        self.assertFalse(snap["encounter"]["live"])  # the earlier fight, as asked
+        self.t.on_log(life(8_600, 302.0, entity=3), 302.0)
+        self.t.on_log(life(7_900, 303.0, entity=3), 303.0)
+        self.assertIsNotNone(self.t.snapshot(303.5)["view"])  # hits don't take it back
         self.t.view_step(1)
         snap = self.t.snapshot(303.5)
         self.assertIsNone(snap["view"])
@@ -549,17 +562,15 @@ class EarlierFightsTest(unittest.TestCase):
         self.assertEqual([h["damage"] for h in snap["history"]], [4_000])  # this session's own
         self.assertEqual(snap["encounter"]["damage"], 4_000)
 
-    def test_fights_fought_while_a_session_is_open_go_to_this_session_only(self):
+    def test_a_fight_started_while_a_session_is_open_goes_to_this_session_and_back_to_it(self):
         earlier = self.earlier_session()
         self.t.open_session(earlier, "14 Nov 20:05")
         self.fight(self.t, 300.0, entity=3, hit=700)
         snap = self.t.snapshot(400.0)
-        self.assertEqual(snap["view"]["session"], "14 Nov 20:05")  # still the one being read
-        self.assertEqual(len(snap["history"]), 2)
+        self.assertIsNone(snap["view"])  # the new fight closed the session being read
+        self.assertEqual([h["damage"] for h in snap["history"]], [2_800])
         self.assertEqual(snap["fights_this_session"], 1)
         self.assertEqual(len(self.tracker().snapshot(500.0)["history"]), 1)  # and one in the file
-        self.t.open_session(None)
-        self.assertEqual([h["damage"] for h in self.t.snapshot(400.0)["history"]], [2_800])
 
     def test_new_fight_and_a_missing_session_both_go_back_to_this_session(self):
         self.t.open_session(self.earlier_session(), "14 Nov 20:05")

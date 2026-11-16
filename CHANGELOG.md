@@ -9,6 +9,8 @@
   page marks any that won't reach Waveband. Holding Alt also brings up the game's cursor, handy
   for moving the meter.
 - "Hide the meter between fights" hides it 12 seconds after a fight ends, not 20.
+- Starting a fight while an earlier one is on show switches the meter to the new fight by
+  itself, instead of only saying that one is running.
 - The copied fight summary is written for Discord: the fight as a small heading, the DPS in
   bold, the characters as a numbered list and the fine print in small grey text. Its columns no
   longer come out ragged.

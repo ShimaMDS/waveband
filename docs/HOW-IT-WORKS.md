@@ -66,9 +66,10 @@ dashboard has three pages: Fights, Settings and What changed.
 as they end, one file per session in the `sessions` folder (`sessions\2026-11-15_16-30-05.json`),
 and the list starts empty at every start. Alt+F7 steps back through this session's fights on
 the meter itself and Alt+Shift+F7 steps forward again; a line on the meter says which fight is shown,
-and the meter keeps measuring behind it. Earlier sessions open from the tray menu or from the
+and the meter keeps measuring behind it. When a new fight starts, the meter goes back to it by
+itself; stepping back during a fight still works. Earlier sessions open from the tray menu or from the
 list on the dashboard's Fights page. They are only read: new fights still go to the current
-session. Session files are plain JSON and are never deleted by Waveband.
+session, and a new fight closes the earlier session on show. Session files are plain JSON and are never deleted by Waveband.
 
 **Copying a fight.** "Copy this fight's summary" puts the fight on show on the clipboard as a few
 lines written in Discord's markdown, ready to paste into a chat:
