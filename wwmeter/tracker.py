@@ -69,6 +69,12 @@ _LULL = 1.0  # seconds the fight clock keeps running after the last hit
 _NUMBERS_WIN = 1.15  # numbers must beat the logged total by this much to be shown instead
 _COMBAT_LINGER = 10.0  # seconds after the last skill during which numbers are still read
 _BAR_TOLERANCE = 0.008
+# Once the log has been quiet this long, the bar has caught up with every logged hit, so what is
+# left between them is a pixel or so of reading. Measured on the recordings (2026-11-17): with
+# no damage over time the gap then stays within +0.20% (median -0.04%); with Frazzle it sat at
+# +0.80% all along, which was the 0.8% tolerance never being booked.
+_LOG_QUIET = 2.0
+_BAR_TOLERANCE_QUIET = 0.0035
 _BAR_AGREES = 0.01
 _BAR_JUMP = 0.03  # a gap growing this fast is the bar switching to another enemy, not damage
 # ...unless there is only one boss about. Then it is damage the log did not report, once it has
@@ -742,11 +748,23 @@ class Tracker:
             if stamp > then:
                 break
             life_then = value
-        still_missing = (life_then / enc.main_max - min(window) - _BAR_TOLERANCE) * enc.main_max
+        # the same tolerance as booking uses, or what a quiet spell booked would be taken back at
+        # the next hit and booked again after it
+        still_missing = (life_then / enc.main_max - min(window) - self._tolerance(enc, now)) * enc.main_max
         still_missing = max(0.0, still_missing)
         if still_missing < enc.other_counted:
             enc.ledgers["log"].add(int(now - enc.started), OTHER, still_missing - enc.other_counted, hit=False)
             enc.other_counted = still_missing
+
+    @staticmethod
+    def _tolerance(enc: Encounter, now: float) -> float:
+        """How far below the logged HP the bar may sit before the difference counts as damage the
+        log did not report. Wide while hits are being logged (a hit is in the log a moment before
+        it is on the bar), a pixel or so once the log has been quiet."""
+        last_line = enc.life_log[-1][0] if enc.life_log else None
+        if last_line is not None and now - last_line >= _LOG_QUIET:
+            return _BAR_TOLERANCE_QUIET
+        return _BAR_TOLERANCE
 
     def _reconcile(self, enc: Encounter, now: float) -> None:
         """Count HP the bar shows as lost but the log never reported.
@@ -790,7 +808,7 @@ class Tracker:
                 return
         else:
             enc.jump_since = None
-        extra = (gap - _BAR_TOLERANCE) * enc.main_max
+        extra = (gap - self._tolerance(enc, now)) * enc.main_max
         if extra > 1.0:
             enc.other_counted += extra
             enc.last_activity = now

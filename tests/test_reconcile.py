@@ -4,7 +4,7 @@ import unittest
 
 from wwmeter.logparse import LogEvent
 from wwmeter.roster import Roster
-from wwmeter.tracker import Tracker
+from wwmeter.tracker import _BAR_TOLERANCE_QUIET as QUIET, Tracker
 
 MAX_HP = 1_000_000
 
@@ -59,6 +59,23 @@ class ReconcileTest(unittest.TestCase):
         self.assertEqual([p["name"] for p in enc["players"]], ["Alpha"])
         self.assertEqual(enc["damage"], round(MAX_HP * 0.005 * 30))
 
+    def test_a_quiet_spell_with_the_bar_a_pixel_low_adds_nothing(self):
+        # no damage over time: after the hits the bar reads 0.2% under the log (the most seen on
+        # the recordings in a quiet spell), which is reading, not damage
+        self.run_fight(10, hit_per_second=0.005, bar_per_second=0.005)
+        self.quiet(110.0, 10.0, lambda t: 0.95 - 0.002)
+        enc = self.t.snapshot(120.0)["encounter"]
+        self.assertEqual([p["name"] for p in enc["players"]], ["Alpha"])
+        self.assertEqual(enc["damage"], round(MAX_HP * 0.05))
+
+    def test_ticks_in_a_quiet_spell_are_counted_to_within_a_pixel(self):
+        # the row used to stay the full 0.8% short of the bar; once the log is quiet only the
+        # reading's margin is left out
+        self.run_fight(10, hit_per_second=0.005, bar_per_second=0.005)
+        self.quiet(110.0, 10.0, lambda t: 0.95 - 0.02)
+        over = self.players(120.0)["Over time"]["damage"]
+        self.assertAlmostEqual(over, MAX_HP * (0.02 - QUIET), delta=MAX_HP * 0.0005)
+
     def test_damage_over_time_is_counted_from_the_bar(self):
         # hits take 0.5% a second, the bar falls 0.7% a second: 0.2% a second is not in the log
         self.run_fight(40, hit_per_second=0.005, bar_per_second=0.007)
@@ -110,9 +127,9 @@ class ReconcileTest(unittest.TestCase):
         self.quiet(110.0, 21.0, lambda t: 0.95 - 0.04 * (1 + int(t // 3)))
         players = self.players(131.0)
         self.assertEqual(players["Alpha"]["damage"], round(MAX_HP * 0.05))
-        self.assertAlmostEqual(players["Over time"]["damage"], MAX_HP * (0.28 - 0.008), delta=MAX_HP * 0.001)
+        self.assertAlmostEqual(players["Over time"]["damage"], MAX_HP * (0.28 - QUIET), delta=MAX_HP * 0.001)
         boss = self.t.snapshot(131.0)["encounter"]["boss"]
-        self.assertAlmostEqual(boss["life"], MAX_HP * (0.67 + 0.008), delta=MAX_HP * 0.001)
+        self.assertAlmostEqual(boss["life"], MAX_HP * (0.67 + QUIET), delta=MAX_HP * 0.001)
 
     def test_the_boss_of_the_scene_just_left_does_not_count_as_a_second_boss(self):
         # As fought on 2026-11-16: the hologram left and entered again at once. The boss of the
@@ -127,7 +144,7 @@ class ReconcileTest(unittest.TestCase):
         self.run_fight(4, hit_per_second=0.005, bar_per_second=0.005)
         self.quiet(104.0, 12.0, lambda t: 0.98 - 0.04 * (1 + int(t // 3)))
         self.assertAlmostEqual(
-            self.players(116.0)["Over time"]["damage"], MAX_HP * (0.16 - 0.008), delta=MAX_HP * 0.001
+            self.players(116.0)["Over time"]["damage"], MAX_HP * (0.16 - QUIET), delta=MAX_HP * 0.001
         )
 
     def kill(self, ts: float) -> None:
@@ -180,8 +197,8 @@ class ReconcileTest(unittest.TestCase):
         self.kill(116.0)
         self.t.on_log(life(MAX_HP * 0.46, 117.0), 117.0)  # too late to be that blow
         players = self.players(117.1)
-        self.assertEqual(players["Alpha"]["damage"], round(MAX_HP * (0.50 + 0.30 + 0.008)))
-        self.assertEqual(players["Over time"]["damage"], round(MAX_HP * (0.20 - 0.008)))
+        self.assertEqual(players["Alpha"]["damage"], round(MAX_HP * (0.50 + 0.30 + QUIET)))
+        self.assertEqual(players["Over time"]["damage"], round(MAX_HP * (0.20 - QUIET)))
         self.assertEqual(self.t.snapshot(117.1)["encounter"]["damage"], MAX_HP)
 
     def test_a_lone_boss_s_bar_misread_for_a_second_is_not_damage(self):
