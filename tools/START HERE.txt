@@ -39,8 +39,8 @@ is from an unknown publisher (it is not signed): choose "More info", then
 "Run anyway". Some antivirus programs flag unsigned programs built this way.
 
 
-KEYS  (they only work while the game is the focused window)
-----
+KEYBINDS  (they only work while the game is the focused window)
+--------
 F7        show the fight before the one on the meter (Shift+F7: the one after)
 F8        show or hide the meter
 Shift+F8  one-line meter: only the clock and the damage per second
@@ -49,7 +49,7 @@ F10       start a new fight
 F11       move mode: drag the meter, scroll to resize, F11 again to lock
 
 The meter lists the plain keys along its top. To remove that line, untick
-"Show the keys on the meter" in the tray icon's menu.
+"Show the keybinds on the meter" in the tray icon's menu.
 
 Each time you start the meter is a session with its own list of fights,
 starting empty. While an earlier fight is shown the meter says so, and goes

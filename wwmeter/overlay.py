@@ -471,7 +471,7 @@ def run(
     rest_action = entry("Hide the meter between fights", "rest", cfg.hide_between_fights)
     move_action = entry("Move or resize the overlay", "move", False)
     capture_action = entry("Hide from screenshots and streams", "capture", cfg.hide_from_capture)
-    hints_action = entry("Show the keys on the meter", "hints", cfg.show_keys)
+    hints_action = entry("Show the keybinds on the meter", "hints", cfg.show_keys)
     theme_menu = menu.addMenu("Theme")
     theme_actions = {}
 

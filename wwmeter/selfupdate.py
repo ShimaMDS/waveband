@@ -49,7 +49,7 @@ _VERSION = re.compile(r"^v?(\d+)\.(\d+)(?:\.(\d+))?(?:-beta\.(\d+))?", re.IGNORE
 
 
 def version_key(version: str) -> tuple[int, ...]:
-    """A version to compare with others: 0.3.0 < 0.3.1 < 0.3.2 < 0.4.0-beta.1 < 0.4.0. A
+    """A version to compare with others: 0.3.0 < 0.3.1-beta.1 < 0.3.1-beta.2 < 0.3.1 < 0.3.2-beta.1. A
     build on the way to a version (0.3.0.dev0) counts as that version; anything unreadable as
     nothing."""
     found = _VERSION.match(str(version or "").strip())
@@ -68,7 +68,7 @@ class Failed(Exception):
 
 @dataclass(frozen=True)
 class Release:
-    version: str  # "0.3.0", "0.3.1", "0.4.0-beta.1"
+    version: str  # "0.3.1-beta.1", "0.3.1"
     page: str  # the release's page, for reading or downloading by hand
     setup_url: str
     setup_name: str
@@ -89,19 +89,18 @@ def _get(url: str):
     return urllib.request.urlopen(request, timeout=_TIMEOUT)
 
 
-# Update channels. Stable releases (0.3.0, then 0.4.0) are ordinary GitHub releases from the
-# `stable` branch; betas are the versions between them (0.3.1, 0.3.2, ..., and any labelled one
-# like 0.4.0-beta.1), GitHub pre-releases from `beta`. "stable" sees only the first; "beta"
-# sees both, so a beta user moves on to the stable version as well. (0.2.0 came before this
-# scheme; 0.2.x was meant for quick fixes to stable.)
+# Update channels. Each version goes out as a beta first and then as a stable release of the same
+# number: 0.3.1-beta.1 (a GitHub pre-release from `beta`), then 0.3.1 (an ordinary release from
+# `stable`), then 0.3.2-beta.1, 0.3.2, ... up to 0.4.0. "stable" sees only the ordinary releases;
+# "beta" sees both, so a beta user moves on to each stable version as well.
 CHANNELS = ("stable", "beta")
 
 
 def is_beta(version: str = __version__) -> bool:
-    """True for a test version. From 0.3.0 on, only x.y.0 is a stable release: the versions
-    between (0.3.1, 0.3.2, ...) are betas, as is anything labelled one (0.4.0-beta.1)."""
+    """True for a test version: one labelled -beta.N (0.3.1-beta.1). Each version goes out as a
+    beta first and then as a stable release of the same number (0.3.1-beta.1, then 0.3.1)."""
     found = _VERSION.match(str(version or "").strip())
-    return bool(found and (found.group(4) or int(found.group(3) or 0) > 0))
+    return bool(found and found.group(4))
 
 
 def effective_channel(setting: str, version: str = __version__) -> str:

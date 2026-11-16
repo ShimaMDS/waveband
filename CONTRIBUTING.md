@@ -11,7 +11,7 @@ screen resolution, and what the meter showed against what you expected.
 ## Branches
 
 - **`main`** is where the next version is worked on. **Pull requests go to `main`.**
-- **`beta`** holds the test versions between stable releases (`0.3.1`, `0.3.2`, ...).
+- **`beta`** holds each version first, as a test (`0.3.1-beta.1`), before it goes to `stable`.
 - **`stable`** is what the latest release was built from, and what GitHub shows first. It only
   changes when a release goes out, so please don't open pull requests against it.
 

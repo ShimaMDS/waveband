@@ -44,7 +44,7 @@ itself uses F1 to F6.
 | F10 | Start a new fight |
 | F11 | Move mode: drag the meter, scroll to resize, F11 again to lock |
 
-The plain keys are listed along the top of the meter ("Show the keys on the meter" turns that
+The plain keys are listed along the top of the meter ("Show the keybinds on the meter" turns that
 off). Three more actions have no key until you give them one: hiding between fights, copying a
 fight's summary, and the line of keys. All of them are also in the tray menu. If another program
 already holds one of these keys, Windows won't give it to Waveband; the meter says so ("F9 is in
@@ -285,9 +285,9 @@ installed.
 **Updates.** Waveband asks GitHub for the newest release when it starts and once a day (turn it
 off in Settings, The game). The request names Waveband and its version and nothing about you.
 When there's a newer version, the meter says so between fights and the tray menu gets "Install
-update". **Stable** only offers stable versions (0.3.0, then 0.4.0); **Beta**
-also offers the test versions between them (0.3.1, 0.3.2, ...) and still moves on to each stable
-version. Choose
+update". **Stable** only offers stable versions (0.3.0, 0.3.1, ...); **Beta**
+also offers the test version each of them gets first (0.3.1-beta.1 before 0.3.1) and still moves
+on to each stable version. Choose
 under Settings, Game, "Updates to take"; until you do, a beta of Waveband is on Beta and any
 other version on Stable. An installed copy then downloads the installer, checks it, runs it quietly and starts
 again on the new version; the zip copy just tells you where to download it. "Install updates at
@@ -392,13 +392,15 @@ Tools, run with `.venv\Scripts\python tools\<name>.py`:
 | `grade_number_reader.py`, `collect_number_samples.py`, `build_digit_templates.py` | Grade and train the optional damage-number reader |
 | `build_release.py --out <folder>` | Build `Waveband.exe`, the zip, the installer and the signed checksums. See [RELEASING.md](RELEASING.md) |
 | `release_key.py` | The release signing key: make, lock, sign, verify |
+| `sign_release.bat` | Drag a release's `SHA256SUMS.txt` onto it: shows the file, asks for the key's passphrase, signs and checks the signature |
 | `test_exe.py <folder>` | Smoke-test a built `Waveband.exe` |
-| `render_page.py`, `drive_page.py` | Render or script a page of a running meter, to check the look and the controls without the game |
+| `render_page.py`, `drive_page.py` | Render or script a page of a running meter, to check the look and the controls without the game; `settings_walk.js` is the `drive_page.py` script that uses every control of the settings page (against a demo meter with settings of its own) |
 | `screenshots.py` | Take the README's pictures from the demo meter |
 | `make_logo.py` | Draw the logo, the icons, the installer's pictures and each element theme's mark and wordmark |
 | `make_themes.py` | Write the six element themes from their colours and typefaces |
 | `theme_previews.py` | Pictures of every theme's meter and dashboard, drawn twice as sharp, and a grid of them all, in `assets\themes\` (kept out of git) |
 | `exe_entry.py` | What `Waveband.exe` runs (used by `build_release.py`) |
+| `START HERE.txt` | The testers' one-page guide; `build_release.py` puts it in every release with the version filled in |
 
 ## If something looks wrong
 
