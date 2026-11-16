@@ -162,6 +162,24 @@ class ChannelTest(unittest.TestCase):
         with FakeGitHub(version="9.1.0", others=[("9.9.9", True, True)]):
             self.assertEqual(selfupdate.latest(channel="beta").version, "9.1.0")
 
+    def test_a_chosen_channel_is_kept_whatever_the_version(self):
+        for version in ("0.3.0", "0.3.0-beta.1", "0.3.0.dev0"):
+            self.assertEqual(selfupdate.effective_channel("stable", version), "stable")
+            self.assertEqual(selfupdate.effective_channel("beta", version), "beta")
+
+    def test_until_one_is_chosen_a_beta_follows_beta_and_the_rest_stable(self):
+        self.assertEqual(selfupdate.effective_channel("", "0.3.0-beta.1"), "beta")
+        self.assertEqual(selfupdate.effective_channel("", "0.3.0"), "stable")
+        self.assertEqual(selfupdate.effective_channel("", "0.2.1"), "stable")
+        self.assertEqual(selfupdate.effective_channel("", "0.3.0.dev0"), "stable")
+        self.assertEqual(selfupdate.effective_channel("nonsense", "0.3.0-beta.2"), "beta")
+
+    def test_a_beta_on_its_own_hears_of_the_next_beta(self):
+        # someone who installed beta.1 from a link and never opened Settings
+        with FakeGitHub(version="0.2.0", others=[("0.3.0-beta.2", True, False)]):
+            channel = selfupdate.effective_channel("", "0.3.0-beta.1")
+            self.assertEqual(selfupdate.latest(channel=channel).version, "0.3.0-beta.2")
+
     def test_the_checker_asks_the_channel_set(self):
         updates = selfupdate.Updates(enabled=lambda: True, auto=lambda: False, quit_app=lambda: None,
                                      tell=lambda _t: None, channel=lambda: "beta")

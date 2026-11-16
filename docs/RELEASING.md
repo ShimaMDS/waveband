@@ -57,8 +57,8 @@ merge `stable` into `main` so the fix is not lost. **The next stable version:** 
 `stable`, set the version to `0.3.0`, make its heading plain `## 0.3.0`, and publish an ordinary release; then set
 `main` to the next `.dev0`.
 
-Installed copies on the Stable channel (the default) only see ordinary releases; on Beta (Settings,
-The game, "Updates to take") they see pre-releases too, and still move on to each stable version.
+Installed copies on the Stable channel only see ordinary releases; on Beta (Settings, Game,
+"Updates to take"; a beta build is on Beta until the user picks) they see pre-releases too, and still move on to each stable version.
 GitHub never treats a pre-release as the latest release. The repository's history starts at 0.2.0.
 
 **The release key.** `tools\release_key.py new` made it once (2026-11-16). Its private half is

@@ -161,8 +161,10 @@ class Config:
     check_updates: bool = True
     # Install a newer version at start without asking first (an installed copy only).
     auto_update: bool = False
-    # Which updates to take: "stable" (x.y.0 releases only) or "beta" (the versions between too).
-    update_channel: str = "stable"
+    # Which updates to be told about: "stable" (releases only) or "beta" (test versions of the next
+    # release too). "" until chosen: then a beta of Waveband follows Beta and any other version
+    # Stable, so a tester who installs a beta hears about the next one without changing anything.
+    update_channel: str = ""
 
     @property
     def log_path(self) -> str:

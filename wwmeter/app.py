@@ -111,7 +111,7 @@ def run(cfg: Config, demo: bool = False, overlay: bool = True) -> int:
     app_updates = selfupdate.Updates(
         enabled=lambda: bool(cfg.check_updates) and not demo,
         auto=lambda: bool(cfg.auto_update),
-        channel=lambda: cfg.update_channel if cfg.update_channel in selfupdate.CHANNELS else "stable",
+        channel=lambda: selfupdate.effective_channel(cfg.update_channel),
         quit_app=quit_for_update,
         tell=told.append,
     )

@@ -96,6 +96,20 @@ def _get(url: str):
 CHANNELS = ("stable", "beta")
 
 
+def is_beta(version: str = __version__) -> bool:
+    """True for a test version: 0.3.0-beta.1."""
+    found = _VERSION.match(str(version or "").strip())
+    return bool(found and found.group(4))
+
+
+def effective_channel(setting: str, version: str = __version__) -> str:
+    """The channel to check: the one chosen in Settings, or, while none is, Beta on a beta of
+    Waveband and Stable on anything else."""
+    if setting in CHANNELS:
+        return setting
+    return "beta" if is_beta(version) else "stable"
+
+
 def latest(repo: str = "", channel: str = "stable") -> Release | None:
     """The newest release on ``channel``, or None when the repository has none (or none with an
     installer)."""

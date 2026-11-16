@@ -285,10 +285,11 @@ installed.
 **Updates.** Waveband asks GitHub for the newest release when it starts and once a day (turn it
 off in Settings, The game). The request names Waveband and its version and nothing about you.
 When there's a newer version, the meter says so between fights and the tray menu gets "Install
-update". **Stable** (the default) only offers stable versions (0.2.0, its fixes 0.2.1 and 0.2.2,
+update". **Stable** only offers stable versions (0.2.0, its fixes 0.2.1 and 0.2.2,
 then 0.3.0); **Beta** also offers test versions of the next release (0.3.0-beta.1, beta.2, ...)
 and still moves on to each stable version. Choose
-under Settings, The game, "Updates to take". An installed copy then downloads the installer, checks it, runs it quietly and starts
+under Settings, Game, "Updates to take"; until you do, a beta of Waveband is on Beta and any
+other version on Stable. An installed copy then downloads the installer, checks it, runs it quietly and starts
 again on the new version; the zip copy just tells you where to download it. "Install updates at
 start without asking" is off unless you turn it on.
 
