@@ -48,9 +48,9 @@ Work happens on `main`. **A beta:** merge `main` into `beta`, set the version to
 (`0.3.0-beta.1`), build and sign from `beta`, tag `v0.3.0-beta.1` there, and publish with
 `gh release create v0.3.0-beta.1 --prerelease ...`. Its notes go in the next version's changelog
 section ("0.3.0 (beta)"). **A quick fix to stable:** fix it on `stable`, set the version to the
-next patch (`0.2.1`), date a changelog section for it, and publish an ordinary release; then
+next patch (`0.2.1`), add a changelog section for it (`## 0.2.1`, no date), and publish an ordinary release; then
 merge `stable` into `main` so the fix is not lost. **The next stable version:** merge `beta` into
-`stable`, set the version to `0.3.0`, date its section, and publish an ordinary release; then set
+`stable`, set the version to `0.3.0`, make its heading plain `## 0.3.0`, and publish an ordinary release; then set
 `main` to the next `.dev0`.
 
 Installed copies on the Stable channel (the default) only see ordinary releases; on Beta (Settings,
@@ -83,7 +83,7 @@ Before publishing a release, every line should hold:
 - `README.md`, `docs\HOW-IT-WORKS.md`, this file and `tools\START HERE.txt` say what the build
   does, and the README's pictures are of this version (`tools\screenshots.py`).
 - The version in `wwmeter\__init__.py` has lost its `.dev0`, and the top section of
-  `CHANGELOG.md` has the release date and reads right to someone who only uses the meter.
+  `CHANGELOG.md` is headed with just the version (no date) and reads right to someone who only uses the meter.
 - Built with `tools\build_release.py` in a fresh environment; `tools\test_exe.py` passes and the
   overlay picture looks right.
 - The zip holds no `config.json`, logs, recordings or number samples, and no user name or
