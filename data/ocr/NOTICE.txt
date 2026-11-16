@@ -1,0 +1,15 @@
+ch_PP-OCRv3_rec_infer.onnx
+
+The text recognition model from PaddleOCR (PP-OCRv3, Chinese and Latin script), converted to
+ONNX by RapidOCR and taken unchanged from the rapidocr-onnxruntime 1.2.3 package.
+
+  PaddleOCR  https://github.com/PaddlePaddle/PaddleOCR   Copyright (c) PaddlePaddle Authors
+  RapidOCR   https://github.com/RapidAI/RapidOCR         Copyright (c) RapidAI
+
+Both are licensed under the Apache License, Version 2.0:
+https://www.apache.org/licenses/LICENSE-2.0
+
+SHA-256 897a3ededb38fee0dae2c1ccee38241f37df202c9509e3abca02e9217c5ee615
+
+Waveband reads the boss's name and level above its HP bar with it (wwmeter/ocr.py). This model
+is not covered by Waveband's own license (AGPL-3.0-or-later); the Apache-2.0 terms above apply.

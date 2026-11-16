@@ -35,7 +35,6 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from . import __version__, signing
-from .changelog import key as version_key
 from .config import NAME, ROOT
 
 # The repository the releases are published in, as "owner/name". Empty until it exists: the
@@ -45,7 +44,19 @@ REPO = os.environ.get("WAVEBAND_UPDATE_REPO", "ShimaMDS/waveband")
 API = os.environ.get("WAVEBAND_UPDATE_API", "https://api.github.com")
 SUMS = "SHA256SUMS.txt"
 SIGNATURE = SUMS + ".sig"
-_SETUP = re.compile(r"^Waveband-[\w.]+-setup\.exe$", re.IGNORECASE)
+_SETUP = re.compile(r"^Waveband-[\w.-]+-setup\.exe$", re.IGNORECASE)
+_VERSION = re.compile(r"^v?(\d+)\.(\d+)(?:\.(\d+))?(?:-beta\.(\d+))?", re.IGNORECASE)
+
+
+def version_key(version: str) -> tuple[int, ...]:
+    """A version to compare with others: 0.3.0 < 0.3.1 < 0.3.2 < 0.4.0-beta.1 < 0.4.0. A
+    build on the way to a version (0.3.0.dev0) counts as that version; anything unreadable as
+    nothing."""
+    found = _VERSION.match(str(version or "").strip())
+    if not found:
+        return ()
+    major, minor, patch, beta = found.groups()
+    return (int(major), int(minor), int(patch or 0), 0 if beta else 1, int(beta or 0))
 _TIMEOUT = 30.0
 EVERY = 24 * 3600.0  # seconds between checks while running
 _FIRST = 8.0  # seconds after start before the first, so the start is not slowed
@@ -57,7 +68,7 @@ class Failed(Exception):
 
 @dataclass(frozen=True)
 class Release:
-    version: str  # "0.2.1"
+    version: str  # "0.3.0", "0.3.1", "0.4.0-beta.1"
     page: str  # the release's page, for reading or downloading by hand
     setup_url: str
     setup_name: str
@@ -78,13 +89,43 @@ def _get(url: str):
     return urllib.request.urlopen(request, timeout=_TIMEOUT)
 
 
-def latest(repo: str = "") -> Release | None:
-    """The newest release, or None when the repository has none (or none with an installer)."""
+# Update channels. Stable releases (0.3.0, then 0.4.0) are ordinary GitHub releases from the
+# `stable` branch; betas are the versions between them (0.3.1, 0.3.2, ..., and any labelled one
+# like 0.4.0-beta.1), GitHub pre-releases from `beta`. "stable" sees only the first; "beta"
+# sees both, so a beta user moves on to the stable version as well. (0.2.0 came before this
+# scheme; 0.2.x was meant for quick fixes to stable.)
+CHANNELS = ("stable", "beta")
+
+
+def is_beta(version: str = __version__) -> bool:
+    """True for a test version. From 0.3.0 on, only x.y.0 is a stable release: the versions
+    between (0.3.1, 0.3.2, ...) are betas, as is anything labelled one (0.4.0-beta.1)."""
+    found = _VERSION.match(str(version or "").strip())
+    return bool(found and (found.group(4) or int(found.group(3) or 0) > 0))
+
+
+def effective_channel(setting: str, version: str = __version__) -> str:
+    """The channel to check: the one chosen in Settings, or, while none is, Beta on a beta of
+    Waveband and Stable on anything else."""
+    if setting in CHANNELS:
+        return setting
+    return "beta" if is_beta(version) else "stable"
+
+
+def latest(repo: str = "", channel: str = "stable") -> Release | None:
+    """The newest release on ``channel``, or None when the repository has none (or none with an
+    installer)."""
     repo = repo or REPO
     if not repo:
         raise Failed("Update checks are not set up in this build.")
     try:
-        with _get(f"{API}/repos/{repo}/releases/latest") as response:
+        if channel == "beta":
+            with _get(f"{API}/repos/{repo}/releases?per_page=30") as response:
+                listed = json.load(response)
+            releases = [_release(repo, data) for data in listed if isinstance(data, dict) and not data.get("draft")]
+            releases = [r for r in releases if r is not None]
+            return max(releases, key=lambda r: version_key(r.version), default=None)
+        with _get(f"{API}/repos/{repo}/releases/latest") as response:  # never a pre-release
             data = json.load(response)
     except urllib.error.HTTPError as exc:
         if exc.code == 404:
@@ -92,6 +133,10 @@ def latest(repo: str = "") -> Release | None:
         raise Failed(f"GitHub answered {exc.code}. Try again later.") from exc
     except (OSError, ValueError) as exc:
         raise Failed(f"Couldn't reach GitHub ({getattr(exc, 'reason', None) or exc}).") from exc
+    return _release(repo, data)
+
+
+def _release(repo: str, data: dict) -> Release | None:
     version = str(data.get("tag_name") or "").lstrip("vV")
     assets = {str(a.get("name")): a for a in data.get("assets") or [] if isinstance(a, dict)}
     setup = next((a for name, a in assets.items() if _SETUP.match(name)), None)
@@ -196,8 +241,9 @@ class Updates:
     meter, the tray and the settings page show."""
 
     def __init__(self, enabled: Callable[[], bool], auto: Callable[[], bool], quit_app: Callable[[], None],
-                 tell: Callable[[str], None]) -> None:
+                 tell: Callable[[str], None], channel: Callable[[], str] = lambda: "stable") -> None:
         self._enabled, self._auto, self._quit, self._tell = enabled, auto, quit_app, tell
+        self._channel = channel
         self._lock = threading.Lock()
         self._busy = False
         self._stop = threading.Event()
@@ -212,6 +258,7 @@ class Updates:
             "status": self.status, "line": self.line, "current": __version__,
             "latest": release.version if release else "", "page": release.page if release else "",
             "installs": installed(), "checked_at": self.checked_at, "set_up": bool(REPO),
+            "channel": self._channel(),
         }
 
     def start(self) -> None:
@@ -240,7 +287,7 @@ class Updates:
         try:
             self.status, self.line = "checking", "Looking for a newer version"
             try:
-                release = latest()
+                release = latest(channel=self._channel())
             except Failed as why:
                 self.status, self.line = "error", str(why)
                 return

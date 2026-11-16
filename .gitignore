@@ -31,3 +31,9 @@ learned_parts.json
 
 # Local notes, not published
 private/
+
+# Theme previews made locally by tools/theme_previews.py
+assets/themes/
+
+# Logo concepts made locally by tools/make_logo.py
+assets/logo/concepts/

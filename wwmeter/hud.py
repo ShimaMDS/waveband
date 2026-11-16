@@ -9,7 +9,6 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-import cv2
 import numpy as np
 
 _REF_HEIGHT = 1440.0
@@ -48,9 +47,34 @@ def bar_rect(width: int, height: int, override: list[float] | None = None) -> tu
     )
 
 
+# OpenCV's 8-bit BGR->HSV, done the way it does it (fixed point, 12 fractional bits, rounded
+# lookup tables), so the thresholds below mean what they meant when they were fitted with
+# OpenCV. tests/test_hud.py checks it against OpenCV on every colour when OpenCV is installed.
+_HSV_SHIFT = 12
+_HSV_HALF = 1 << (_HSV_SHIFT - 1)
+_steps = np.arange(256, dtype=np.float64)
+with np.errstate(divide="ignore"):
+    _S_DIV = np.where(_steps > 0, np.round((255 << _HSV_SHIFT) / _steps), 0).astype(np.int64)
+    _H_DIV = np.where(_steps > 0, np.round((180 << _HSV_SHIFT) / (6.0 * _steps)), 0).astype(np.int64)
+del _steps
+
+
+def bgr_to_hsv(bgr: np.ndarray) -> np.ndarray:
+    """An 8-bit BGR image as HSV with H in 0..179, S and V in 0..255, exactly as OpenCV's
+    ``cvtColor(..., COLOR_BGR2HSV)`` gives it."""
+    b, g, r = (bgr[..., k].astype(np.int64) for k in range(3))
+    v = np.maximum(np.maximum(b, g), r)
+    diff = v - np.minimum(np.minimum(b, g), r)
+    s = (diff * _S_DIV[v] + _HSV_HALF) >> _HSV_SHIFT
+    h = np.where(v == r, g - b, np.where(v == g, b - r + 2 * diff, r - g + 4 * diff))
+    h = (h * _H_DIV[diff] + _HSV_HALF) >> _HSV_SHIFT
+    h = np.where(h < 0, h + 180, h)
+    return np.stack([h, s, v], axis=-1).astype(np.uint8)
+
+
 def _classify(bgr: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """(fill, empty) masks: the bar's orange-to-red fill, and the dark empty track."""
-    hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
+    hsv = bgr_to_hsv(bgr)
     h, s, v = hsv[..., 0], hsv[..., 1], hsv[..., 2]
     fill = ((h <= 24) | (h >= 172)) & (s >= 140) & (v >= 190)
     empty = v < 140
@@ -123,7 +147,7 @@ def parse_title(text: str, name_readable: bool = True) -> str:
 
 
 def read_boss_title(frame: np.ndarray, ocr) -> str:
-    """OCR the name above the boss bar. ``ocr`` is a RapidOCR engine."""
+    """Read the name above the boss bar. ``ocr`` is a ``wwmeter.ocr.TextReader``."""
     height, width = frame.shape[:2]
     x0, _, x1, _ = bar_rect(width, height)
     s = _scale(height)
@@ -131,8 +155,7 @@ def read_boss_title(frame: np.ndarray, ocr) -> str:
     crop = frame[round(_TITLE_TOP * s) : round(_TITLE_BOTTOM * s), max(0, x0 - pad) : x1 + pad]
     if crop.size == 0:
         return ""
-    result, _ = ocr(crop, use_det=False, use_cls=False)
-    if not result:
+    text, score = ocr(crop)
+    if not text:
         return ""
-    text, score = result[0][-2], float(result[0][-1])
     return parse_title(text, name_readable=score >= 0.6)

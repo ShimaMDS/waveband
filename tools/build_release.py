@@ -28,7 +28,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # the other tool
 from wwmeter import __version__  # noqa: E402
 from wwmeter.config import NAME  # noqa: E402
 
-DATA_FILES = ("characters.json", "names.json", "enemy_hp.json", "part_shares.json", "digits.npz")
+# digits.npz stays out: it is only for the damage-number reader, which needs OpenCV (not in the
+# build), and an .npz is a zip, which Nexus Mods rejects as an archive inside the archive
+DATA_FILES = ("characters.json", "names.json", "enemy_hp.json", "part_shares.json",
+              "ocr/ch_PP-OCRv3_rec_infer.onnx", "ocr/NOTICE.txt")
 SOURCE_FILES = ("requirements.txt", "run.bat")
 SOURCE_NOTE = (
     "This is the source Waveband.exe was built from, included so you can read what it does.\n\n"
@@ -39,20 +42,68 @@ SOURCE_NOTE = (
 SELFTEST_BAT = '@echo off\r\ncd /d "%~dp0"\r\nstart "" /wait Waveband.exe selftest\r\nif exist selftest.txt start "" notepad selftest.txt\r\n'
 
 
+def version_numbers(version: str) -> tuple[int, int, int, int]:
+    """A version as the four numbers Windows keeps in a program's file properties: 0.3.0.dev0
+    and 0.3.0-beta.2 are 0.3.0.0, 0.2.1 is 0.2.1.0."""
+    numbers = []
+    for part in version.replace("-", ".").split("."):
+        if not part.isdigit():
+            break
+        numbers.append(int(part))
+    return tuple((numbers + [0, 0, 0, 0])[:4])
+
+
+def version_info(version: str) -> str:
+    """Waveband.exe's version information, as PyInstaller's --version-file reads it: what Windows
+    shows under the file's Properties, Details. A program with none looks like an anonymous one
+    to the antivirus engines that score files by machine learning; every signed library beside
+    it has this."""
+    numbers = version_numbers(version)
+    strings = {
+        "CompanyName": "Waveband",
+        "FileDescription": "Waveband, a damage meter for Wuthering Waves",
+        "FileVersion": version,
+        "InternalName": NAME,
+        "LegalCopyright": "Copyright (c) Waveband contributors. Free software: AGPL-3.0-or-later.",
+        "OriginalFilename": f"{NAME}.exe",
+        "ProductName": NAME,
+        "ProductVersion": version,
+        "Comments": "https://github.com/ShimaMDS/waveband",
+    }
+    table = ",\n          ".join(f"StringStruct({k!r}, {v!r})" for k, v in strings.items())
+    return (
+        "VSVersionInfo(\n"
+        f"  ffi=FixedFileInfo(filevers={numbers}, prodvers={numbers}, mask=0x3f, flags=0x0,\n"
+        "                    OS=0x40004, fileType=0x1, subtype=0x0, date=(0, 0)),\n"
+        "  kids=[\n"
+        "    StringFileInfo([StringTable('040904B0', [\n"
+        f"          {table}])]),\n"
+        "    VarFileInfo([VarStruct('Translation', [1033, 1200])]),\n"
+        "  ])\n"
+    )
+
+
 def build_exe(work: str) -> str:
     """Run PyInstaller; returns the folder holding Waveband.exe and _internal."""
+    os.makedirs(work, exist_ok=True)
+    version_file = os.path.join(work, "version-info.txt")
+    with open(version_file, "w", encoding="utf-8") as fh:
+        fh.write(version_info(__version__))
     command = [
         sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "--windowed",
         "--name", NAME,
         # drawn by tools/make_logo.py
         "--icon", os.path.join(ROOT, "assets", "waveband.ico"),
+        "--version-file", version_file,
         "--distpath", os.path.join(work, "dist"),
         "--workpath", os.path.join(work, "build"),
         "--specpath", work,
         "--paths", ROOT,
         "--collect-submodules", "wwmeter",
-        # the text reader loads its models and settings from its own folder at run time
-        "--collect-all", "rapidocr_onnxruntime",
+        # OpenCV is only for the damage-number reader, which is off and stays out of the build
+        # (wwmeter/dmgnum.py says so on the meter if it is turned on); the boss-title reader
+        # needs ONNX Runtime alone, with its model in data\ocr
+        "--exclude-module", "cv2",
         "--exclude-module", "tkinter",
         os.path.join(ROOT, "tools", "exe_entry.py"),
     ]
@@ -118,6 +169,44 @@ def unused_qt(qt: str) -> list[str]:
     return [path for name, path in here.items() if is_qt(name) and name not in needed]
 
 
+def unzip_base_library(release: str) -> int:
+    """Unpack PyInstaller's ``_internal/base_library.zip`` into a folder of the same name.
+
+    It holds the compiled modules of Python's standard library that start the interpreter. Nexus
+    Mods quarantines an upload holding another archive, and this is one. PyInstaller's launcher
+    puts that exact path on Python's search path, so the name has to stay; as a folder, Python
+    reads the modules from it as from any folder (tested: the self-test and a demo run pass).
+    Unpacking the modules straight into ``_internal`` works as well (on the search path too, and
+    no name clashes), if the folder's name is ever the problem. Returns the number of files."""
+    path = os.path.join(release, "_internal", "base_library.zip")
+    if not os.path.isfile(path):
+        return 0
+    unpacked = path + ".unpacked"
+    shutil.rmtree(unpacked, ignore_errors=True)
+    with zipfile.ZipFile(path) as bundle:
+        count = len([n for n in bundle.namelist() if not n.endswith("/")])
+        bundle.extractall(unpacked)
+    os.remove(path)
+    os.rename(unpacked, path)
+    return count
+
+
+# the first bytes of a zip (a file in one, or an empty one) and of a 7z
+_ARCHIVE_MAGIC = (b"PK\x03\x04", b"PK\x05\x06", b"7z\xbc\xaf")
+
+
+def archives_inside(release: str) -> list[str]:
+    """Files in the release that are zips themselves (by their first bytes, whatever the name)."""
+    found = []
+    for folder, _, files in os.walk(release):
+        for file in files:
+            path = os.path.join(folder, file)
+            with open(path, "rb") as fh:
+                if fh.read(4) in _ARCHIVE_MAGIC:
+                    found.append(os.path.relpath(path, release))
+    return found
+
+
 def trim(release: str) -> float:
     """Delete bundled files the meter never loads. Returns the megabytes saved."""
     internal = os.path.join(release, "_internal")
@@ -131,8 +220,6 @@ def trim(release: str) -> float:
     # of dialogs the meter never shows
     doomed += _listed(os.path.join(qt, "translations", "qtwebengine_locales"), lambda f: f == "en-US.pak")
     doomed += _listed(os.path.join(qt, "translations"), lambda f: not f.endswith(".qm"))
-    # video files are never opened
-    doomed += _listed(os.path.join(internal, "cv2"), lambda f: not f.startswith("opencv_videoio_ffmpeg"))
     # AVIF pictures are never opened; Pillow goes without when the module is absent
     doomed += _listed(os.path.join(internal, "PIL"), lambda f: not f.startswith("_avif"))
     # a software stand-in for OpenGL: the overlay is drawn through Direct3D
@@ -196,10 +283,12 @@ def main(argv: list[str] | None = None) -> int:
         built = build_exe(work)
     shutil.copytree(built, release)
     print(f"trimmed {trim(release):.0f} MB of files the meter never loads")
+    print(f"unpacked base_library.zip into a folder: {unzip_base_library(release)} files")
 
     shutil.copytree(os.path.join(ROOT, "ui"), os.path.join(release, "ui"))
     os.makedirs(os.path.join(release, "data"))
     for file in DATA_FILES:
+        os.makedirs(os.path.dirname(os.path.join(release, "data", file)), exist_ok=True)
         shutil.copy2(os.path.join(ROOT, "data", file), os.path.join(release, "data", file))
     # the meter reads the changelog to say what changed; the licence goes with every copy; the
     # README's pictures and the write-ups are in docs
@@ -222,6 +311,10 @@ def main(argv: list[str] | None = None) -> int:
     with open(os.path.join(source, "README.txt"), "w", encoding="utf-8", newline="\r\n") as fh:
         fh.write(SOURCE_NOTE)
 
+    nested = archives_inside(release)
+    if nested:
+        print("Archives inside the release (Nexus Mods would quarantine it):", ", ".join(nested))
+        return 1
     archive = os.path.join(out, name + ".zip")
     if os.path.exists(archive):
         os.remove(archive)

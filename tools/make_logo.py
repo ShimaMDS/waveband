@@ -4,13 +4,17 @@
 
 Writes ``assets\\logo\\`` (SVGs, large PNGs and a sheet of them all, for the README and anywhere
 else the project is shown), ``assets\\waveband.ico`` (the program's icon, used by
-``build_release.py``), ``ui\\waveband.png`` (the tray icon and the dashboard's favicon) and
-``ui\\waveband-mark.svg`` (the mark in the dashboard's top bar). Those come from the design in
-use, concept C, Resonance Halo.
+``build_release.py``) and ``ui\\waveband.png`` (the tray icon and the dashboard's favicon). Those
+come from the design in use, concept C, Resonance Halo.
+
+The dashboard's top bar shows a mark and a wordmark that follow the theme: ``ui\\brand\\`` holds
+the default's (for WuWa and Classic) and one pair per element theme. Each element has its own
+mark in the Resonance Halo family, drawn here too, with a sheet per element in
+``assets\\logo\\elements\\<element>\\`` and all six in ``assets\\logo\\elements\\overview.png``.
 
 It also draws the other concepts, for asking people which they like: each in
 ``assets\\logo\\concepts\\<letter>-<name>\\`` with its own sheet, and all five side by side in
-``assets\\logo\\concepts\\overview.png``.
+``assets\\logo\\concepts\\overview.png``. That folder is kept out of git, on this PC only.
 
 Everything is drawn here from straight lines, arcs and polygons: no font file and nothing taken
 from the game. The designs borrow the game's manner only: dark grounds, a metal accent and an
@@ -405,10 +409,16 @@ def main() -> int:
     # Windows shows the tray icon at 16 to 24 pixels, so it is the bold small one, not the detailed
     # 64: shrunk that far, fine rings turn to mush
     _image(icon_svg(CURRENT, small=True), 64, 64, LOGO).save(os.path.join(ROOT, "ui", "waveband.png"))
-    # the mark for the dashboard's top bar
-    with open(os.path.join(ROOT, "ui", "waveband-mark.svg"), "w", encoding="utf-8", newline="\n") as fh:
-        fh.write(_svg(512, 512, CURRENT.mark(CURRENT, True)))  # shown at 26 px: the bold one
     installer_images(CURRENT)
+    # the dashboard's top bar: the default design for WuWa and Classic, each element's own for its theme
+    brand_files("wuwa", CURRENT)  # also Classic's: base.css points at these unless a theme says otherwise
+    for theme, d in ELEMENT_DESIGNS:
+        brand_files(theme, d)
+        write_design(d, os.path.join(ELEMENTS_DIR, theme), f"{d.title}  ·  the {theme.capitalize()} theme's mark")
+    themes_of = {d.title: theme for theme, d in ELEMENT_DESIGNS}
+    overview([d for _, d in ELEMENT_DESIGNS], lambda d: os.path.join(ELEMENTS_DIR, themes_of[d.title]),
+             os.path.join(ELEMENTS_DIR, "overview.png"), "the element themes' marks",
+             "shown in Waveband when its theme is picked  ·  nothing taken from the game")
     # every concept, the one in use among them, for showing people side by side
     for d in DESIGNS:
         write_design(d, os.path.join(CONCEPTS, d.slug), f"concept {d.key}  ·  {d.title}")
@@ -416,6 +426,182 @@ def main() -> int:
     print("wrote assets\\logo, assets\\waveband.ico, ui\\waveband.png and",
           ", ".join(f"concepts\\{d.slug}" for d in DESIGNS), "+ concepts\\overview.png")
     return 0
+
+
+# --- the element themes' marks --------------------------------------------------------------------
+# Each element theme carries a mark of its own in the Resonance Halo family: an open halo around a
+# centre, the halo and the centre after the element. Colours are the themes' (tools/make_themes.py):
+# accent = the element's own colour, pale = a light tint of it, fade_end = the theme's second colour.
+
+def _polar(cx: float, cy: float, r: float, degrees: float) -> tuple[float, float]:
+    return cx + r * math.cos(math.radians(degrees)), cy + r * math.sin(math.radians(degrees))
+
+
+def _line(x0: float, y0: float, x1: float, y1: float, colour: str, width: float, cap: str = "butt") -> str:
+    return (f'<line x1="{x0:.1f}" y1="{y0:.1f}" x2="{x1:.1f}" y2="{y1:.1f}" stroke="{colour}" '
+            f'stroke-width="{width}" stroke-linecap="{cap}"/>')
+
+
+def _arcs(d: Design, spans, r: float, width: float, colour: str | None = None, opacity: float = 1.0) -> list[str]:
+    return [f'<path d="{_arc(256, 256, r, a0, a1)}" fill="none" stroke="{colour or d.accent}" '
+            f'stroke-width="{width}" stroke-opacity="{opacity}"/>' for a0, a1 in spans]
+
+
+def mark_glacio(d: Design, small: bool) -> str:
+    """A six-armed ice crystal in a halo broken into crystal facets."""
+    parts = _arcs(d, [(a, a + 40) for a in range(-80, 280, 60)], 200, 30 if small else 10)
+    arm, width = (160, 34) if small else (124, 12)
+    for k in range(6):
+        angle = -90 + k * 60
+        x, y = _polar(256, 256, arm, angle)
+        parts.append(_line(256, 256, x, y, d.pale, width, "round"))
+        if not small:
+            for along, size in ((0.55, 34), (0.8, 22)):
+                bx, by = _polar(256, 256, arm * along, angle)
+                for turn in (-45, 45):
+                    ex, ey = _polar(bx, by, size, angle + turn)
+                    parts.append(_line(bx, by, ex, ey, d.pale, 7, "round"))
+    hexagon = " ".join(f"{x:.1f},{y:.1f}" for x, y in (_polar(256, 256, 26 if not small else 40, -90 + k * 60) for k in range(6)))
+    parts.append(f'<polygon points="{hexagon}" fill="{d.accent}"/>')
+    return "\n  ".join(parts)
+
+
+def mark_fusion(d: Design, small: bool) -> str:
+    """A flame rising inside two arcs of heat, the halo open where the flame climbs."""
+    width = 36 if small else 12
+    parts = _arcs(d, [(110, 250), (290, 410)], 202, width)
+    if not small:
+        parts += _arcs(d, [(130, 230)], 166, 5, d.fade_end, 0.85)
+    outer = "M256,402 C170,360 172,262 230,176 C232,228 262,236 276,196 C292,150 270,118 262,96 C352,150 370,270 330,340 C312,372 288,394 256,402 Z"
+    inner = "M256,372 C214,348 214,292 246,248 C248,282 272,288 282,262 C310,300 306,350 256,372 Z"
+    parts.append(f'<path d="{outer}" fill="{d.pale}"/>')
+    parts.append(f'<path d="{inner}" fill="{d.accent}"/>')
+    return "\n  ".join(parts)
+
+
+def mark_electro(d: Design, small: bool) -> str:
+    """A lightning bolt, the halo broken by sparks at four points."""
+    width = 32 if small else 11
+    parts = _arcs(d, [(-75, -15), (15, 75), (105, 165), (195, 255)], 200, width)
+    if not small:
+        for angle in (-45, 45, 135, 225):
+            x0, y0 = _polar(256, 256, 178, angle)
+            x1, y1 = _polar(256, 256, 222, angle)
+            parts.append(_line(x0, y0, x1, y1, d.fade_end, 6, "round"))
+    bolt = "M286,80 L176,276 L246,276 L214,432 L340,220 L268,220 L304,80 Z"
+    parts.append(f'<path d="{bolt}" fill="{d.pale}" stroke="{d.accent}" stroke-width="{10 if small else 6}" stroke-linejoin="miter"/>')
+    return "\n  ".join(parts)
+
+
+def mark_aero(d: Design, small: bool) -> str:
+    """Three wind blades turning about the centre, in spiral arcs."""
+    parts = []
+    if small:
+        parts += _arcs(d, [(200, 320), (20, 140)], 204, 30)
+    else:
+        parts += _arcs(d, [(195, 315)], 206, 10)
+        parts += _arcs(d, [(15, 135)], 206, 10)
+        parts += _arcs(d, [(250, 330), (70, 150)], 172, 5, d.fade_end, 0.9)
+    width = 40 if small else 22
+    for k, colour in enumerate((d.pale, d.accent, d.pale)):
+        angle = -90 + k * 120
+        tx, ty = _polar(256, 256, 150, angle)
+        qx, qy = _polar(256, 256, 120, angle + 55)
+        sx, sy = _polar(256, 256, 22, angle + 110)
+        parts.append(f'<path d="M{sx:.1f},{sy:.1f} Q{qx:.1f},{qy:.1f} {tx:.1f},{ty:.1f}" fill="none" '
+                     f'stroke="{colour}" stroke-width="{width}" stroke-linecap="round"/>')
+    return "\n  ".join(parts)
+
+
+def mark_spectro(d: Design, small: bool) -> str:
+    """An eight-pointed star in a ring of rays: light going out."""
+    parts = []
+    if small:
+        parts.append(f'<circle cx="256" cy="256" r="196" fill="none" stroke="{d.accent}" stroke-width="28"/>')
+        for k in range(8):
+            x0, y0 = _polar(256, 256, 150, k * 45)
+            x1, y1 = _polar(256, 256, 180, k * 45)
+            parts.append(_line(x0, y0, x1, y1, d.accent, 22))
+        parts.append(_spark(256, 256, 140, 66, d.pale))
+        return "\n  ".join(parts)
+    parts.append(f'<circle cx="256" cy="256" r="160" fill="none" stroke="{d.accent}" stroke-width="6"/>')
+    for k in range(16):
+        angle = k * 22.5
+        long = k % 2 == 0
+        x0, y0 = _polar(256, 256, 178, angle)
+        x1, y1 = _polar(256, 256, 226 if long else 204, angle)
+        parts.append(_line(x0, y0, x1, y1, d.accent if long else d.fade_end, 8 if long else 5))
+    parts.append(f'<g transform="rotate(45 256 256)">{_spark(256, 256, 96, 34, d.fade_end)}</g>')
+    parts.append(_spark(256, 256, 132, 48, d.pale))
+    parts.append(_spark(256, 256, 52, 20, d.accent))
+    return "\n  ".join(parts)
+
+
+def _crescent(cx: float, cy: float, r: float, ox: float, oy: float, r2: float) -> str:
+    """The part of the circle (cx, cy, r) outside the circle (ox, oy, r2), as a path."""
+    dx, dy = ox - cx, oy - cy
+    dist = math.hypot(dx, dy)
+    a = (r * r - r2 * r2 + dist * dist) / (2 * dist)
+    h = math.sqrt(max(0.0, r * r - a * a))
+    mx, my = cx + a * dx / dist, cy + a * dy / dist
+    p1 = (mx + h * dy / dist, my - h * dx / dist)
+    p2 = (mx - h * dy / dist, my + h * dx / dist)
+    return (f"M{p1[0]:.1f},{p1[1]:.1f} A{r},{r} 0 1 0 {p2[0]:.1f},{p2[1]:.1f} "
+            f"A{r2},{r2} 0 0 1 {p1[0]:.1f},{p1[1]:.1f} Z")
+
+
+def mark_havoc(d: Design, small: bool) -> str:
+    """A crescent eclipse in thorned arcs."""
+    width = 32 if small else 12
+    parts = _arcs(d, [(150, 300), (330, 480)], 202, width, d.fade_end)
+    if not small:
+        for angle in (165, 205, 245, 285, 345, 25, 65, 105):
+            x0, y0 = _polar(256, 256, 202, angle)
+            x1, y1 = _polar(256, 256, 232, angle + 8)
+            parts.append(_line(x0, y0, x1, y1, d.fade_end, 7))
+    r = 150 if small else 118
+    parts.append(f'<path d="{_crescent(256, 256, r, 256 + r * 0.42, 256 - r * 0.32, r * 0.86)}" fill="{d.pale}"/>')
+    parts.append(f'<circle cx="{256 + r * 0.42:.1f}" cy="{256 - r * 0.32:.1f}" r="{r * 0.86:.1f}" fill="none" '
+                 f'stroke="{d.accent}" stroke-width="{12 if small else 4}"/>')
+    if not small:
+        parts.append(_diamond(256 + r * 0.42, 256 - r * 0.32, 16, d.accent))
+    return "\n  ".join(parts)
+
+
+# (theme, design): the colours match the themes; stroke, slant and spacing give each wordmark
+# the element's manner
+ELEMENT_DESIGNS = (
+    ("glacio", Design("G", "Glacio Crystal", "#0a1320", "#24405c", "#41aefb", "#eaf6ff", "#bfe2ff", mark_glacio,
+                      stroke=7.0, spacing=34.0)),
+    ("fusion", Design("F", "Fusion Flame", "#150a09", "#4a2018", "#f0744e", "#ffe6dc", "#f08a74", mark_fusion,
+                      stroke=14.0, spacing=22.0, skew=-8.0)),
+    ("electro", Design("E", "Electro Bolt", "#0d0a17", "#36245a", "#b46bff", "#efe6ff", "#9ad8ff", mark_electro,
+                       stroke=10.0, spacing=24.0, skew=-4.0)),
+    ("aero", Design("A", "Aero Gale", "#08130f", "#1e4a3c", "#55ffb5", "#e8fff4", "#7fe0cf", mark_aero,
+                    stroke=8.0, spacing=30.0, skew=-12.0)),
+    ("spectro", Design("S", "Spectro Radiance", "#141209", "#4a4224", "#f8e56c", "#fffbe6", "#f3dc8a", mark_spectro,
+                       stroke=9.0, spacing=32.0)),
+    ("havoc", Design("H", "Havoc Eclipse", "#120810", "#4a1838", "#e649a6", "#ffe1ef", "#e2556e", mark_havoc,
+                     stroke=15.0, spacing=20.0)),
+)
+ELEMENTS_DIR = os.path.join(LOGO, "elements")
+BRAND = os.path.join(ROOT, "ui", "brand")
+
+
+def brand_files(theme: str, d: Design) -> None:
+    """``ui\\brand\\<theme>-mark.svg`` (the bold version, as it is shown at 26 px) and
+    ``<theme>-wordmark.svg`` for the dashboard's top bar. The wordmark has no ground of its own,
+    so a design with a cut is drawn without one there."""
+    os.makedirs(BRAND, exist_ok=True)
+    plain = Design(**{**d.__dict__, "cut": False})
+    words, words_w = wordmark_body(plain, 4, 14, 100)
+    files = {
+        f"{theme}-mark.svg": _svg(512, 512, d.mark(d, True)),
+        f"{theme}-wordmark.svg": _svg(words_w + 8, 128, _fade(plain) + words),
+    }
+    for name, svg in files.items():
+        with open(os.path.join(BRAND, name), "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(svg)
 
 
 INSTALLER = os.path.join(ASSETS, "installer")
@@ -565,23 +751,26 @@ def sheet(d: Design, folder: str, title: str, icons: dict, small_icon, wordmark)
     page.save(os.path.join(folder, "waveband-logo-sheet.png"))
 
 
-def overview() -> None:
+def overview(designs=None, folder_of=None, out: str = "", subtitle: str = "five logo concepts",
+             right: str = "which one would you pick?  ·  inspired by the game's look, nothing taken from it") -> None:
     """``concepts\\overview.png``: the five side by side, each as its icon at 128, 48 and 24 px
     and its lockup, labelled with its letter and name, for asking which people like."""
     from PIL import Image, ImageDraw
 
+    designs = designs or DESIGNS
+    folder_of = folder_of or (lambda d: os.path.join(CONCEPTS, d.slug))
+    out = out or os.path.join(CONCEPTS, "overview.png")
     width, margin, row_h, header = 1600, 28, 230, 92
-    page = Image.new("RGB", (width, header + len(DESIGNS) * (row_h + 14) + margin), (8, 10, 14))
+    page = Image.new("RGB", (width, header + len(designs) * (row_h + 14) + margin), (8, 10, 14))
     draw = ImageDraw.Draw(page)
     pale, gold = _rgb("#f1ece0"), _rgb("#d9b566")
     draw.text((margin, 26), "WAVEBAND", font=_font(30), fill=pale)
-    draw.text((margin + 190, 36), "five logo concepts", font=_font(18), fill=gold)
-    right = "which one would you pick?  ·  inspired by the game's look, nothing taken from it"
+    draw.text((margin + 190, 36), subtitle, font=_font(18), fill=gold)
     draw.text((width - margin - draw.textlength(right, font=_font(15)), 38), right, font=_font(15), fill=pale)
     draw.line([(margin, 76), (width - margin, 76)], fill=gold, width=2)
     y = header + 6
-    for d in DESIGNS:
-        folder = os.path.join(CONCEPTS, d.slug)
+    for d in designs:
+        folder = folder_of(d)
         ground, accent = _rgb(d.ground), _rgb(d.accent)
         draw.rectangle([margin, y, width - margin, y + row_h], fill=ground, outline=_rgb(d.edge))
         draw.rectangle([margin, y, margin + 6, y + row_h], fill=accent)
@@ -602,7 +791,7 @@ def overview() -> None:
             lockup = lockup.resize((room, round(lockup.height * room / lockup.width)), Image.LANCZOS)
         page.paste(lockup, (x + 10, y + (row_h - lockup.height) // 2), lockup)
         y += row_h + 14
-    page.save(os.path.join(CONCEPTS, "overview.png"))
+    page.save(out)
 
 
 if __name__ == "__main__":

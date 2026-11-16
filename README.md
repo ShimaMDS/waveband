@@ -50,13 +50,15 @@ dashboard, and copy a fight's summary to paste into chat.
 
 **And also:**
 
-- The WuWa theme, after the game's own HUD, in your own element colours if you like (themes
-  for each element are coming in 0.3.0)
+- Themes: **WuWa**, plus one for each element (Glacio, Fusion, Electro, Aero, Spectro, Havoc) in
+  that element's colours
 - A one-line meter, hiding between fights, and staying out of screenshots and streams
 - Rows that show what you care about: damage per second, total, share, or time on field
-- Keys you rebind by pressing them, and all your settings as one line for another PC
+- Keybinds you set by pressing them, and all your settings as one line to import on another PC
 - Bosses and characters named the way your game names them, in any of its ten text languages
 - One click to update boss data after a patch; Waveband tells you when it's needed
+
+<img src="docs/images/themes.png" alt="The meter in the WuWa theme and the six element themes" width="820">
 
 ## Keys
 
@@ -77,7 +79,8 @@ Only active while the game is in front. Change them in Settings.
 - No per-skill damage, crits or healing: the game's log doesn't have them.
 - Nothing about you or your game is sent anywhere. Waveband goes online only to check for its own
   updates (you can turn that off) and, when you ask, to fetch boss data after a patch.
-- Updates are only installed if they carry Waveband's own signature.
+- Updates are only installed if they carry Waveband's own signature. Want new versions early?
+  Switch *Updates to take* to Beta in Settings.
 
 **Something wrong?** Run *Waveband self-test* from the Start menu (or `selftest.bat` in the zip)
 and attach the `selftest.txt` it makes to [a new issue](../../issues/new/choose). More fixes are
@@ -90,12 +93,14 @@ git clone https://github.com/ShimaMDS/waveband.git
 cd waveband
 run.bat                                        # sets up .venv on first run, then starts the meter
 .venv\Scripts\python -m wwmeter run --demo     # a made-up fight, no game needed
+.venv\Scripts\python -m pip install -r requirements-dev.txt   # for the tests and tools\
 .venv\Scripts\python -m unittest discover -s tests
 ```
 
 Python 3.11 or newer. Inside the code, Waveband is still called `wwmeter`.
 [How it works](docs/HOW-IT-WORKS.md) covers the internals and every tool;
-[RELEASING.md](docs/RELEASING.md) covers builds and signed releases.
+[RELEASING.md](docs/RELEASING.md) covers builds and signed releases. Want to help? See
+[CONTRIBUTING.md](CONTRIBUTING.md); pull requests go to `main`.
 
 ## Credits
 
@@ -106,8 +111,10 @@ Python 3.11 or newer. Inside the code, Waveband is still called `wwmeter`.
 - **Ideas:** the FFXIV overlays [Ember Overlay](https://github.com/GoldenChrysus/ffxiv-ember-overlay)
   and [kagerou](https://github.com/hibiyasleep/kagerou), and [ok-ww](https://github.com/ok-oldking/ok-wuthering-waves)'s
   self-updating installer.
-- **Built with** Python, [Qt for Python](https://doc.qt.io/qtforpython-6/), OpenCV, NumPy,
-  RapidOCR, ONNX Runtime, BetterCam, websockets, pywin32 and Pillow; packaged with PyInstaller and
+- **Built with** Python, [Qt for Python](https://doc.qt.io/qtforpython-6/), NumPy, ONNX Runtime,
+  BetterCam, websockets, pywin32 and Pillow; the boss title is read with
+  [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)'s text recognizer as packaged by
+  [RapidOCR](https://github.com/RapidAI/RapidOCR) (Apache-2.0, `data/ocr`); packaged with PyInstaller and
   [Inno Setup](https://jrsoftware.org/isinfo.php).
 
 ## License

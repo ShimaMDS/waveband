@@ -84,6 +84,27 @@ class _PrintWindowBackend:
         pass
 
 
+def _bgra_to_bgr(image: np.ndarray) -> np.ndarray:
+    """The frame as BGR: a plain copy of the BGRA rows (about 3.5 ms at 2560x1440), seen without
+    its alpha channel. Not a contiguous BGR array: packing the three channels together in NumPy
+    takes 20 ms a frame, and the readers only look at strips of the frame anyway."""
+    return np.array(image)[..., :3]
+
+
+def _convert_without_opencv(camera) -> None:
+    """Have bettercam turn its BGRA frames into BGR without OpenCV.
+
+    Asked for BGR, bettercam converts each frame with ``cv2.cvtColor`` (OpenCV, which the meter
+    no longer ships); asked for BGRA, it hands back a view of the GPU staging surface, which it
+    unmaps before returning, so the pixels would be read after they are gone. Its converter is
+    replaced instead: it runs while the frame is still mapped, and copies it out (bettercam
+    1.0.0's NumpyProcessor.process_cvtcolor)."""
+    backend = getattr(getattr(camera, "_processor", None), "backend", None)
+    if backend is None or not hasattr(backend, "process_cvtcolor"):
+        raise RuntimeError("this bettercam has no colour converter to replace; capture needs OpenCV")
+    backend.process_cvtcolor = _bgra_to_bgr
+
+
 class _DuplicationBackend:
     """DXGI desktop duplication of the monitor the game is on. Fast, but sees whatever is on top."""
 
@@ -110,6 +131,7 @@ class _DuplicationBackend:
                     self._camera = self._bettercam.create(
                         device_idx=device_idx, output_idx=output_idx, output_color="BGR"
                     )
+                    _convert_without_opencv(self._camera)
                     left, top, _, _ = win32api.GetMonitorInfo(monitor)["Monitor"]
                     self._monitor, self._origin = handle, (left, top)
                     return self._camera
@@ -128,8 +150,8 @@ class _DuplicationBackend:
         )
         if region[2] <= region[0] or region[3] <= region[1]:
             return None
-        frame = camera.grab(region=region)  # None when the screen has not changed
-        return None if frame is None else np.ascontiguousarray(frame)
+        # None when the screen has not changed; otherwise BGR, a view of the meter's own copy
+        return camera.grab(region=region)
 
     def close(self) -> None:
         if self._camera is not None:

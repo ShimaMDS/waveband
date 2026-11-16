@@ -97,6 +97,7 @@ function setText(node, text) {
 let shownDps = 0;
 let targetDps = 0;
 let dpsUnit = "damage";
+let dpsSubject = "";
 let easing = false;
 
 function easeDps() {
@@ -112,9 +113,13 @@ function easeDps() {
   setText(el.dps, dpsUnit === "percent" ? shownDps.toFixed(2) : short(shownDps));
 }
 
-function setDps(value, unit = "damage") {
-  if (unit !== dpsUnit) {
+// ``subject`` names what the figure is about (a fight, an earlier fight on show, no fight). Only
+// changes within one subject are eased; on a new one the figure jumps, or going back from an
+// earlier fight would count down through made-up values under "No fight yet".
+function setDps(value, unit = "damage", subject = "") {
+  if (unit !== dpsUnit || subject !== dpsSubject) {
     dpsUnit = unit;
+    dpsSubject = subject;
     shownDps = value;
   }
   targetDps = value;
@@ -596,7 +601,7 @@ function render(state) {
     notice = `${unmeasured} doesn't report its HP, so there's no damage to show.`;
     setText(el.target, unmeasured);
     setText(el.clock, "0:00");
-    setDps(0);
+    setDps(0, "damage", "unmeasured");
     setText(el.totals, "This enemy doesn't report its HP, so there's no damage to show.");
     renderChannels([], "damage");
     drawWave([], false);
@@ -604,7 +609,7 @@ function render(state) {
   } else if (!enc) {
     setText(el.target, "No fight yet");
     setText(el.clock, "0:00");
-    setDps(0);
+    setDps(0, "damage", "none");
     setText(el.totals, "Damage shows up here when you land a hit.");
     renderChannels([], "damage");
     drawWave([], false);
@@ -612,7 +617,7 @@ function render(state) {
   } else {
     setText(el.target, enc.title || "Fight");
     setText(el.clock, clock(enc.duration));
-    setDps(enc.dps, enc.unit);
+    setDps(enc.dps, enc.unit, `${view ? `view ${view.id}` : "live"} ${enc.id}`);
     const parts = enc.unit === "percent"
       ? [enc.damage > 100.5
         ? `<b>${(enc.damage / 100).toFixed(2)}</b> HP bars dealt`

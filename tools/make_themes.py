@@ -1,0 +1,150 @@
+"""Write the six element themes, ``ui\\themes\\<element>.css``: the WuWa look in each element's colours.
+
+    .venv\\Scripts\\python tools\\make_themes.py
+
+Each theme loads ``wuwa.css`` and changes only its colours. The primary colour is the game's own
+for the element (ElementColor in its element table, the same colours the meter gives characters).
+The secondary colour, the tint of the dark ground and of the hairlines, and the two glows of the
+dashboard's background come from looking at that element's playable characters as a group (on
+Prydwen's character list, 2026-11-16): what their outfits, hair and effects share. Nothing is
+taken from the game's or the site's images; these are colours chosen by eye.
+"""
+
+from __future__ import annotations
+
+import os
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# element: what its characters look like together, then the colours
+#   primary, secondary, ground (r g b, very dark), hairline rgb, dim text, waveform rgb,
+#   dashboard glow 1 (top left, primary's side), glow 2 (bottom right, secondary's side), base,
+#   the pale "paper" of the page's main button
+THEMES = {
+    "glacio": (
+        "silver-white hair and white outfits over black, pale ice blue, deep navy and indigo, a "
+        "thread of crimson in a ribbon",
+        "#41aefb", "#dff1ff", "6 14 26", "223, 241, 255", "#b7c9dc", "205, 234, 255",
+        "#1d3c5a", "#262c58", "#0a1320", "#e8f3fb",
+    ),
+    "fusion": (
+        "crimson and scarlet against black and white, warm coral and rose pinks, deep wine reds",
+        "#f0744e", "#e8445a", "22 9 8", "255, 214, 200", "#d6bdb5", "255, 196, 176",
+        "#5a2418", "#4a1428", "#150a09", "#f6ece6",
+    ),
+    "electro": (
+        "charcoal and black with steel and machinery, violet light, crimson hair, a neon cyan",
+        "#b46bff", "#7ad8ff", "13 9 24", "214, 200, 255", "#bdb6d6", "214, 196, 255",
+        "#3b2363", "#14304a", "#0d0a17", "#eeeaf7",
+    ),
+    "aero": (
+        "white and cream with jade and teal, deep green-black, touches of gold",
+        "#55ffb5", "#2fc2b0", "5 18 15", "205, 255, 232", "#b3cdc3", "190, 255, 225",
+        "#1c4a3c", "#123c44", "#08130f", "#eef6ef",
+    ),
+    "spectro": (
+        "white and pale gold, soft pastels, royal and sky blue, cream: the lightest of the six",
+        "#f8e56c", "#9cc8ff", "20 18 10", "255, 246, 214", "#d4cdb4", "255, 244, 204",
+        "#4d4422", "#1f3050", "#141209", "#fbf6e6",
+    ),
+    "havoc": (
+        "black with blood red, lavender and indigo, sharp pinks, stark black and white",
+        "#e649a6", "#c8203c", "18 7 16", "255, 205, 230", "#cbb5c3", "245, 184, 218",
+        "#4a1838", "#2a1a4a", "#120810", "#f4ebf0",
+    ),
+}
+
+
+# Each element's typeface: one Windows ships, so nothing has to be installed, chosen for the manner
+# of the element's characters. Text in Chinese, Japanese or Korean falls back as in the WuWa theme.
+FONTS = {
+    "glacio": ('"Corbel"', "normal"),  # clean, cool, crisp
+    "fusion": ('"Franklin Gothic Medium"', "normal"),  # bold, punchy
+    "electro": ('"Bahnschrift"', "semi-condensed"),  # engineered, like its machinery
+    "aero": ('"Candara"', "normal"),  # flowing, airy
+    "spectro": ('"Constantia"', "normal"),  # refined, luminous (Sitka was too wide for the meter)
+    "havoc": ('"Cambria"', "normal"),  # darker, sharper
+}
+FALLBACK = '"Segoe UI", "Microsoft YaHei UI", "Yu Gothic UI", sans-serif'
+# Corbel, Candara and Constantia draw old-style digits (their heights bounce) and Chromium does not
+# switch them to lining ones, so those themes take the digits alone from a close cousin that has
+# even ones: Calibri for the two humanist sans faces, Cambria for the serif.
+DIGITS = {"glacio": "Calibri", "aero": "Calibri", "spectro": "Cambria"}
+# Constantia runs wide: Spectro's line of keys would wrap onto a second line at the meter's width
+EXTRA = {"spectro": "\n/* Constantia runs wide: keep the line of keys on one line */\n.keys { gap: 3px 8px; font-size: 0.7rem; }\n"}
+
+
+def _digit_faces(font: str) -> str:
+    """@font-face rules that give "Waveband digits" the digits (and the signs around them) of
+    ``font`` at each weight the meter uses."""
+    faces = []
+    for weight, style in ((400, ""), (700, " Bold")):
+        faces.append(f'''@font-face {{
+  font-family: "Waveband digits";
+  src: local("{font}{style}");
+  font-weight: {weight if weight == 400 else "500 900"};
+  unicode-range: U+0030-0039, U+002B-002E, U+0025;
+}}''')
+    return "\n\n".join(faces) + "\n\n"
+
+
+def css(name: str, look: str, primary: str, secondary: str, ink: str, line: str, dim: str, wave: str,
+        glow_1: str, glow_2: str, base: str, paper: str) -> str:
+    title = name.capitalize()
+    font, stretch = FONTS[name]
+    digit_faces = _digit_faces(DIGITS[name]) if name in DIGITS else ""
+    if name in DIGITS:
+        font = '"Waveband digits", ' + font
+    return f"""/* {title} theme: the WuWa look in {title}'s colours. Generated by tools/make_themes.py; change it
+   there. {primary} is the game's own colour for {title}; the rest follows what {title}'s characters
+   share: {look}. */
+
+@import url("wuwa.css");
+
+{digit_faces}:root {{
+  --ink: {ink};
+  --gold: {primary};
+  --accent: {primary};
+  --second: {secondary};
+  --line: rgba({line}, 0.4);
+  --dim: {dim};
+  --wave-rgb: {wave};
+  --type: {font}, {FALLBACK};
+}}
+
+/* even-height digits: some of these fonts draw old-style ones (heights that bounce) by default */
+body {{ font-stretch: {stretch}; font-variant-numeric: lining-nums; }}
+
+/* the theme's own mark and wordmark in the dashboard's top bar (tools/make_logo.py) */
+.views .brand .brand-mark {{ background-image: url("../brand/{name}-mark.svg"); }}
+.views .brand .brand-name {{ background-image: url("../brand/{name}-wordmark.svg"); }}
+{EXTRA.get(name, "")}
+/* the hairline over the meter runs from the element's colour into its second one, from a
+   diamond in the element's colour */
+.meter::before {{ background: linear-gradient(90deg, var(--accent), var(--second) 55%, transparent); }}
+.meter::after {{ background: var(--accent); }}
+
+body.wide {{
+  background:
+    radial-gradient(70% 60% at 100% 100%, {glow_2} 0%, transparent 70%),
+    radial-gradient(120% 90% at 20% 0%, {glow_1} 0%, {base} 70%);
+}}
+
+.panel {{
+  --fill: {paper};
+  border-color: color-mix(in srgb, var(--second) 22%, transparent);
+}}
+"""
+
+
+def main() -> int:
+    folder = os.path.join(ROOT, "ui", "themes")
+    for name, values in THEMES.items():
+        with open(os.path.join(folder, f"{name}.css"), "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(css(name, *values))
+    print("wrote", ", ".join(f"ui/themes/{name}.css" for name in THEMES))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

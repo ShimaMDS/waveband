@@ -285,7 +285,11 @@ installed.
 **Updates.** Waveband asks GitHub for the newest release when it starts and once a day (turn it
 off in Settings, The game). The request names Waveband and its version and nothing about you.
 When there's a newer version, the meter says so between fights and the tray menu gets "Install
-update". An installed copy then downloads the installer, checks it, runs it quietly and starts
+update". **Stable** only offers stable versions (0.3.0, then 0.4.0); **Beta**
+also offers the test versions between them (0.3.1, 0.3.2, ...) and still moves on to each stable
+version. Choose
+under Settings, Game, "Updates to take"; until you do, a beta of Waveband is on Beta and any
+other version on Stable. An installed copy then downloads the installer, checks it, runs it quietly and starts
 again on the new version; the zip copy just tells you where to download it. "Install updates at
 start without asking" is off unless you turn it on.
 
@@ -303,16 +307,17 @@ against the RFC's own test vectors.
 (`http://127.0.0.1:5055/?view=full#settings`). Changes are checked, saved and used at once; nothing
 needs a restart and no file has to be opened.
 
-- **Keys.** Click a key, then press the one you want. Function keys, letters, digits and the
+- **Keybinds.** Click a keybind, then press the key you want. Function keys, letters, digits and the
   navigation keys work, alone or with Ctrl, Alt or Shift; a letter or digit needs Ctrl or Alt,
   because the game uses those itself. A key another action has is refused.
 - **Colours.** A colour of your own for each element.
-- **Meter.** The theme, damage or percent, the size, and the switches the tray menu has.
+- **DPS Meter.** The theme, damage or percent, the size, and the switches the tray menu has.
 - **Rows.** Which figures each character's row shows and in what order (damage per second, total,
   share, time on field, damage per second on field), and how many decimals.
 - **Game.** The language of names, the game's log folder ("Find it for me" usually does it), the
-  boss HP tables, and Waveband's own updates.
-- **Another PC.** All settings as one line of text starting `wwmeter1:`, to paste into Waveband on
+  boss HP tables, and Waveband's own updates: Stable or Beta, looking for them, and installing
+  them without asking.
+- **Import / Export.** All settings as one line of text starting `wwmeter1:`, to paste into Waveband on
   another PC or into a bug report. It leaves out the log folder (its path can contain your
   Windows user name) and the port.
 
@@ -333,9 +338,19 @@ since the version you last ran.
 
 ## Themes and colours
 
-The tray menu's Theme entry switches the look at once: **Wuwa** (the default, after the game's own
-HUD) or **Classic**. Each theme is one stylesheet in `ui\themes`; copy one to make your own and it
-appears in the menu. Add `&theme=classic` to the dashboard's address to preview one.
+The tray menu's Theme entry (and Settings, DPS Meter) switches the look at once. **WuWa**, the
+default, follows the game's own HUD. The six element themes (Glacio, Fusion, Electro, Aero,
+Spectro, Havoc) are the WuWa look in that element's colours: the game's own colour for the
+element, a second colour from what that element's characters wear, and a ground, hairline,
+waveform and dashboard background tinted to match. Each also has its own typeface, one that
+Windows ships (Corbel, Franklin Gothic, Bahnschrift semi-condensed, Candara, Constantia and
+Cambria; where a face draws old-style digits, the digits come from Calibri or Cambria so numbers
+keep an even height), and its own mark and wordmark in the dashboard's top bar, from
+`ui\brand\` (drawn by `tools\make_logo.py`). The program's icon, the installer and the GitHub
+page keep the default Resonance Halo whatever the theme. **Classic**, the original dark panel, is
+there too. Each theme is one stylesheet in `ui\themes` (the element ones are written by
+`tools\make_themes.py`); copy one to make your own and it appears in the menu. Add `&theme=havoc`
+to the dashboard's address to preview one.
 
 Characters are coloured by element, in the game's own element colours: Glacio `#41AEFB`, Fusion
 `#F0744E`, Electro `#B46BFF`, Aero `#55FFB5`, Spectro `#F8E56C`, Havoc `#E649A6`. When two
@@ -380,7 +395,9 @@ Tools, run with `.venv\Scripts\python tools\<name>.py`:
 | `test_exe.py <folder>` | Smoke-test a built `Waveband.exe` |
 | `render_page.py`, `drive_page.py` | Render or script a page of a running meter, to check the look and the controls without the game |
 | `screenshots.py` | Take the README's pictures from the demo meter |
-| `make_logo.py` | Draw the logo, the icons and the installer's pictures |
+| `make_logo.py` | Draw the logo, the icons, the installer's pictures and each element theme's mark and wordmark |
+| `make_themes.py` | Write the six element themes from their colours and typefaces |
+| `theme_previews.py` | Pictures of every theme's meter and dashboard, drawn twice as sharp, and a grid of them all, in `assets\themes\` (kept out of git) |
 | `exe_entry.py` | What `Waveband.exe` runs (used by `build_release.py`) |
 
 ## If something looks wrong
@@ -423,16 +440,18 @@ and `JoinSceneNotify] Begin [InstanceId: n]`. Then rebuild and check the boss HP
 | `wwmeter\tracker.py` | Fights: sources, credit, start and end, bar against log, bar percent into damage |
 | `wwmeter\gamedata.py`, `data\enemy_hp.json`, `data\part_shares.json` | Which placement an enemy is, its full HP and name from the game's data, and the share of a boss's HP each part is |
 | `wwmeter\update.py` | `wwmeter update`: fetch the game's data and rebuild `data\enemy_hp.json` |
-| `wwmeter\hud.py`, `capture.py`, `engine.py` | The boss bar and its title from a frame; frames of the game window; the log and screen threads |
+| `wwmeter\hud.py`, `ocr.py`, `capture.py`, `engine.py` | The boss bar and its title from a frame (`ocr.py` runs PaddleOCR's text recognizer, `data\ocr`, on ONNX Runtime); frames of the game window; the log and screen threads |
 | `wwmeter\server.py`, `app.py`, `overlay.py` | The local server, the wiring, the overlay window and tray |
 | `wwmeter\settings.py`, `ui\settings.js` | The settings page and the one-line settings export |
 | `wwmeter\selfupdate.py`, `signing.py` | Waveband's own updates, and Ed25519 signatures with the release key's public half |
 | `wwmeter\sessions.py`, `summary.py`, `changelog.py` | Session files, the copied summary, What changed |
 | `wwmeter\roster.py`, `hotkeys.py`, `selftest.py`, `dmgnum.py` | Names and elements, keys, the self-test, the optional number reader |
 | `ui\` | The overlay and dashboard page and its themes; `base.css` holds what every theme shares |
-| `data\` | Characters, hand-written names, digit templates, part shares, the boss HP data |
+| `data\` | Characters, hand-written names, digit templates, part shares, the boss HP data, the text recognizer's model (`data\ocr`) |
 | `assets\`, `tools\installer\` | The logo and icons; the Inno Setup installer |
 | `docs\` | This file, the release steps and the README's pictures |
 
-Tests: `.venv\Scripts\python -m unittest discover -s tests`. `.gitignore` keeps out everything a
+Tests: `.venv\Scripts\python -m unittest discover -s tests`, after
+`.venv\Scripts\python -m pip install -r requirements-dev.txt` (OpenCV and RapidOCR, for the tests
+and the tools; the meter itself needs neither). `.gitignore` keeps out everything a
 running copy writes (`config.json`, logs, `sessions\`, `learned_parts.json`) and test recordings.

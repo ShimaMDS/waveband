@@ -60,17 +60,18 @@ the list on the left of the dashboard's Fights page.
 The tray icon has the same actions, a Theme picker, a switch to hide the
 meter between fights, a switch to hide it from screenshots and streams,
 "Copy this fight's summary" (text for pasting into a chat), "Settings"
-(keys, colours, and which figures each character's row shows), "What changed"
+(keybinds, colours, and which figures each character's row shows), "What changed"
 (what is new in this version), and a fuller dashboard in your browser.
 
 If the meter says a key "is in use by another program", that program got
 the key first and it does nothing in the meter: give the action another key
 (below) or use the tray menu.
-To change a key, pick "Settings: keys, colours, log folder" in the tray
-icon's menu. A page opens in your browser: click the key, then press the one
-you want. The same page has the element colours, the language of the names,
-the game's log folder, and one line of text that holds all your settings
-(paste it into a report, or into the meter on another PC).
+To change a key, pick "Settings: keybinds, colours, log folder" in the tray
+icon's menu. A page opens in your browser: click the keybind, then press the
+key you want. The same page has the element colours, the language of the
+names, the game's log folder, and under Import / Export one line of text that
+holds all your settings (paste it into a report, or into Waveband on another
+PC).
 
 
 WHAT IT CAN AND CANNOT MEASURE
@@ -105,9 +106,9 @@ Double-click selftest.bat. It checks each part and opens a short report
 (selftest.txt). Send that report, your screen resolution and what you were
 fighting. waveband.log in this folder holds any error messages.
 
-- "Can't find the game's log file": pick "Settings: keys, colours, log
-  folder" in the tray icon's menu and paste the game's folder under "The
-  game's log folder", or press "Find it for me".
+- "Can't find the game's log file": pick "Settings: keybinds, colours, log
+  folder" in the tray icon's menu, open Game and paste the game's folder under
+  "Log folder", or press "Find it for me".
 - The meter does not show at all: the game must be Borderless or Windowed.
 
 docs\HOW-IT-WORKS.md is the full write-up: how it works, how accurate it is, and what

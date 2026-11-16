@@ -17,6 +17,7 @@ from dataclasses import asdict
 
 from . import hotkeys
 from .config import ROOT, Config
+from .selfupdate import effective_channel
 
 ELEMENTS = ("glacio", "fusion", "electro", "aero", "spectro", "havoc")
 THEME_LABELS = {"wuwa": "WuWa", "classic": "Classic"}
@@ -62,7 +63,9 @@ def available_themes() -> list[str]:
         names = sorted(os.path.splitext(f)[0] for f in os.listdir(folder) if f.endswith(".css"))
     except OSError:
         return []
-    return sorted(names, key=lambda n: (n != "wuwa", n))
+    # WuWa first, then the element themes in the game's order, then any others (Classic)
+    order = {name: place for place, name in enumerate(("wuwa", *ELEMENTS))}
+    return sorted(names, key=lambda n: (order.get(n, len(order)), n))
 
 
 def theme_label(name: str) -> str:
@@ -238,6 +241,7 @@ def _checks(themes: list[str], languages: list[str]) -> dict:
         "share_decimals": _number(0, 2, whole=True),
         "check_updates": _flag,
         "auto_update": _flag,
+        "update_channel": _one_of("", "stable", "beta"),  # "": not chosen, follows the version
     }
 
 
@@ -255,7 +259,7 @@ NAMES = {  # a setting, as a message about it calls it
     "read_numbers": "Reading damage numbers",
     "encounter_timeout": "Seconds before a fight is closed",
     "boss_bar": "The boss bar's place",
-    "show_keys": "Showing the keys",
+    "show_keys": "Showing the keybinds",
     "compact": "The one-line meter",
     "hide_between_fights": "Hiding between fights",
     "language": "The language of names",
@@ -264,7 +268,8 @@ NAMES = {  # a setting, as a message about it calls it
     "share_decimals": "Decimals of a share",
     "check_updates": "Looking for updates",
     "auto_update": "Installing updates without asking",
-    "hotkeys": "Keys",
+    "update_channel": "The update channel",
+    "hotkeys": "Keybinds",
     "colours": "Colours",
     "log_dir": "The log folder",
 }
@@ -382,6 +387,8 @@ def describe(cfg: Config, themes: list[str], languages: list[str], game_language
         "only_over_game": bool(cfg.only_over_game),
         "check_updates": bool(cfg.check_updates),
         "auto_update": bool(cfg.auto_update),
+        # the channel in use, so the page shows Beta on a beta of Waveband until one is chosen
+        "update_channel": effective_channel(cfg.update_channel),
         "overlay_zoom": cfg.overlay_zoom,
         "zoom_range": list(ZOOM),
         "row_figures": row_figures(cfg.row_figures),

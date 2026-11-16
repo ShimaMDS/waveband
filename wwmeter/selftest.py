@@ -92,16 +92,19 @@ def _checks(cfg: config.Config):
             capture.close()
 
     def text_reading():
-        import cv2
         import numpy as np
-        from rapidocr_onnxruntime import RapidOCR
+        from PIL import Image, ImageDraw, ImageFont
 
         from . import hud
+        from .ocr import TextReader
 
-        image = np.full((48, 640, 3), 24, np.uint8)
-        cv2.putText(image, "Lv. 90 Crownless", (12, 34), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (240, 240, 240), 2, cv2.LINE_AA)
-        result, _ = RapidOCR()(image, use_det=False, use_cls=False)
-        text = result[0][-2] if result else ""
+        image = Image.new("RGB", (640, 48), (24, 24, 24))
+        try:
+            font = ImageFont.truetype("arial.ttf", 30)
+        except OSError:
+            font = ImageFont.load_default(30)
+        ImageDraw.Draw(image).text((12, 7), "Lv. 90 Crownless", font=font, fill=(240, 240, 240))
+        text, _ = TextReader()(np.asarray(image)[..., ::-1].copy())
         title = hud.parse_title(text)
         if "90" not in title or "rownless" not in title:
             raise RuntimeError(f"read {text!r} from a test image that says 'Lv. 90 Crownless'")

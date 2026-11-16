@@ -1,5 +1,28 @@
 # What changed
 
+## 0.3.0
+
+- Six new themes, one for each element: Glacio, Fusion, Electro, Aero, Spectro and Havoc. Each
+  is the WuWa look in that element's colours, taken from its characters, with its own typeface
+  and its own logo in the dashboard (an ice crystal, a flame, a lightning bolt, wind blades, a
+  radiant star, a crescent eclipse). WuWa stays the default; pick one from the tray menu's Theme
+  entry or Settings, DPS Meter.
+- A smaller download: the zip is about 180 MB, down from 215 MB. The boss's name and level are
+  now read by the same text recognizer as before, run on its own, without the larger libraries
+  that came with it; it reads them the same way, and a little faster.
+- Beta updates: under Settings, Game, "Updates to take" can be Stable or Beta. Stable tells you
+  about releases (0.3.0, then 0.4.0) only; Beta also about the test versions between them (0.3.1,
+  0.3.2, ...) and still moves on to each stable version. Until you pick, a beta of Waveband is on Beta
+  and any other version on Stable.
+- Clearer names on the settings page: Keys is now Keybinds, Meter is DPS Meter, and Another PC
+  is Import / Export.
+- "Over time" is more accurate: damage over time the log doesn't report (Frazzle, for one) used
+  to end up about 0.8% of the boss's HP short; once the hits stop, it's now counted to within a
+  pixel of the HP bar.
+- Fixes: in the Classic theme the fight clock no longer sits on the waveform, and on the
+  dashboard the big figure no longer counts down through the old fight's number after going
+  back from an earlier fight.
+
 ## 0.2.0
 
 - The meter has a name, Waveband, and an icon of its own. The program is `Waveband.exe` now and its log file is

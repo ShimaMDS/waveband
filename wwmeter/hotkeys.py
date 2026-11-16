@@ -42,7 +42,7 @@ LABELS = {
     "reset": "Start a new fight",
     "move": "Move or resize the meter",
     "capture": "Hide the meter from screenshots and streams",
-    "hints": "Show the keys on the meter",
+    "hints": "Show the keybinds on the meter",
     "rest": "Hide the meter between fights",
     "copy": "Copy the fight's summary",
 }

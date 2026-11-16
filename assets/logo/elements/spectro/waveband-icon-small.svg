@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect x="8" y="8" width="496" height="496" rx="84" fill="#141209"/>
+  <g transform="translate(35.84,35.84) scale(0.86)">
+  <circle cx="256" cy="256" r="196" fill="none" stroke="#f8e56c" stroke-width="28"/>
+  <line x1="406.0" y1="256.0" x2="436.0" y2="256.0" stroke="#f8e56c" stroke-width="22" stroke-linecap="butt"/>
+  <line x1="362.1" y1="362.1" x2="383.3" y2="383.3" stroke="#f8e56c" stroke-width="22" stroke-linecap="butt"/>
+  <line x1="256.0" y1="406.0" x2="256.0" y2="436.0" stroke="#f8e56c" stroke-width="22" stroke-linecap="butt"/>
+  <line x1="149.9" y1="362.1" x2="128.7" y2="383.3" stroke="#f8e56c" stroke-width="22" stroke-linecap="butt"/>
+  <line x1="106.0" y1="256.0" x2="76.0" y2="256.0" stroke="#f8e56c" stroke-width="22" stroke-linecap="butt"/>
+  <line x1="149.9" y1="149.9" x2="128.7" y2="128.7" stroke="#f8e56c" stroke-width="22" stroke-linecap="butt"/>
+  <line x1="256.0" y1="106.0" x2="256.0" y2="76.0" stroke="#f8e56c" stroke-width="22" stroke-linecap="butt"/>
+  <line x1="362.1" y1="149.9" x2="383.3" y2="128.7" stroke="#f8e56c" stroke-width="22" stroke-linecap="butt"/>
+  <path d="M256,116 Q274.48,237.52 322,256 Q274.48,274.48 256,396 Q237.52,274.48 190,256 Q237.52,237.52 256,116 Z" fill="#fffbe6"/>
+  </g>
+</svg>
