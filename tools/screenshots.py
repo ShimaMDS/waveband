@@ -27,13 +27,10 @@ PORT = 5057  # not 5060 or 5061: browsers refuse those (SIP)
 # (file, page, width, height)
 SHOTS = [
     ("overlay.png", "?view=overlay", 440, 400),
-    ("overlay-classic.png", "?view=overlay&theme=classic", 440, 400),
     ("dashboard-fights.png", "?view=full#fights", 1400, 860),
-    ("dashboard-settings.png", "?view=full#settings-rows", 1400, 760),
-    ("dashboard-changes.png", "?view=full#changes", 1400, 760),
 ]
-# the same, with the one-line meter switched on
-COMPACT = [("overlay-one-line.png", "?view=overlay", 440, 120)]
+# The themes shown together in one picture: WuWa and the six element themes, in the game's order.
+THEMES = ("wuwa", "glacio", "fusion", "electro", "aero", "spectro", "havoc")
 
 
 def _wait_for(url: str, seconds: float = 30.0) -> None:
@@ -78,7 +75,7 @@ def _session(settings: dict, shots: list, warm: float) -> None:
             for name, page, width, height in shots:
                 subprocess.run([sys.executable, RENDER, base + page, os.path.join(OUT, name), str(width), str(height)],
                                check=True, cwd=ROOT, stdout=subprocess.DEVNULL)
-                if name.startswith("overlay"):
+                if name.startswith(("overlay", ".theme")):
                     _trim(os.path.join(OUT, name))
                 print("wrote docs/images/" + name)
         finally:
@@ -88,10 +85,41 @@ def _session(settings: dict, shots: list, warm: float) -> None:
         shutil.rmtree(folder, ignore_errors=True)
 
 
+def _themes_picture() -> None:
+    """docs/images/themes.png: the meter in each of THEMES, four to a row, each named under it."""
+    from PIL import Image, ImageDraw, ImageFont
+
+    sys.path.insert(0, ROOT)
+    from wwmeter.settings import theme_label
+
+    pictures = []
+    for name in THEMES:
+        path = os.path.join(OUT, f".theme-{name}.png")
+        pictures.append((name, Image.open(path).convert("RGB")))
+        os.remove(path)
+    cell_w = max(p.width for _, p in pictures) + 24
+    cell_h = max(p.height for _, p in pictures) + 44
+    columns = 4
+    rows = -(-len(pictures) // columns)
+    sheet = Image.new("RGB", (cell_w * columns, cell_h * rows), (16, 20, 26))
+    draw = ImageDraw.Draw(sheet)
+    font_path = os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts", "bahnschrift.ttf")
+    font = ImageFont.truetype(font_path, 20) if os.path.isfile(font_path) else ImageFont.load_default()
+    for index, (name, picture) in enumerate(pictures):
+        x, y = (index % columns) * cell_w + 12, (index // columns) * cell_h + 10
+        sheet.paste(picture, (x, y))
+        label = theme_label(name)
+        draw.text((x + (picture.width - draw.textlength(label, font=font)) / 2, y + picture.height + 8), label,
+                  font=font, fill=(236, 238, 242))
+    sheet.save(os.path.join(OUT, "themes.png"))
+    print("wrote docs/images/themes.png")
+
+
 def main() -> int:
     os.makedirs(OUT, exist_ok=True)
-    _session({}, SHOTS, warm=14.0)
-    _session({"compact": True}, COMPACT, warm=10.0)
+    _session({}, SHOTS + [(f".theme-{name}.png", f"?view=overlay&theme={name}", 440, 400) for name in THEMES],
+             warm=14.0)
+    _themes_picture()
     return 0
 
 

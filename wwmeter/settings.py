@@ -62,7 +62,9 @@ def available_themes() -> list[str]:
         names = sorted(os.path.splitext(f)[0] for f in os.listdir(folder) if f.endswith(".css"))
     except OSError:
         return []
-    return sorted(names, key=lambda n: (n != "wuwa", n))
+    # WuWa first, then the element themes in the game's order, then any others (Classic)
+    order = {name: place for place, name in enumerate(("wuwa", *ELEMENTS))}
+    return sorted(names, key=lambda n: (order.get(n, len(order)), n))
 
 
 def theme_label(name: str) -> str:

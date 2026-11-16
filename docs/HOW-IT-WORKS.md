@@ -337,9 +337,14 @@ since the version you last ran.
 
 ## Themes and colours
 
-The tray menu's Theme entry switches the look at once: **Wuwa** (the default, after the game's own
-HUD) or **Classic**. Each theme is one stylesheet in `ui\themes`; copy one to make your own and it
-appears in the menu. Add `&theme=classic` to the dashboard's address to preview one.
+The tray menu's Theme entry (and Settings, Meter) switches the look at once. **WuWa**, the
+default, follows the game's own HUD. The six element themes (Glacio, Fusion, Electro, Aero,
+Spectro, Havoc) are the WuWa look in that element's colours: the game's own colour for the
+element, a second colour from what that element's characters wear, and a ground, hairline,
+waveform and dashboard background tinted to match. **Classic**, the original dark panel, is
+there too. Each theme is one stylesheet in `ui\themes` (the element ones are written by
+`tools\make_themes.py`); copy one to make your own and it appears in the menu. Add `&theme=havoc`
+to the dashboard's address to preview one.
 
 Characters are coloured by element, in the game's own element colours: Glacio `#41AEFB`, Fusion
 `#F0744E`, Electro `#B46BFF`, Aero `#55FFB5`, Spectro `#F8E56C`, Havoc `#E649A6`. When two
@@ -385,6 +390,7 @@ Tools, run with `.venv\Scripts\python tools\<name>.py`:
 | `render_page.py`, `drive_page.py` | Render or script a page of a running meter, to check the look and the controls without the game |
 | `screenshots.py` | Take the README's pictures from the demo meter |
 | `make_logo.py` | Draw the logo, the icons and the installer's pictures |
+| `make_themes.py` | Write the six element themes from their colours |
 | `exe_entry.py` | What `Waveband.exe` runs (used by `build_release.py`) |
 
 ## If something looks wrong
