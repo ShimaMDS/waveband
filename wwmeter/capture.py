@@ -107,8 +107,10 @@ class _DuplicationBackend:
         for device_idx, outputs in enumerate(factory.outputs):
             for output_idx, output in enumerate(outputs):
                 if int(output.hmonitor) == handle:
+                    # BGRA is what the screen holds; asking bettercam for BGR makes it call OpenCV,
+                    # which the meter no longer ships, so the alpha channel is dropped in grab()
                     self._camera = self._bettercam.create(
-                        device_idx=device_idx, output_idx=output_idx, output_color="BGR"
+                        device_idx=device_idx, output_idx=output_idx, output_color="BGRA"
                     )
                     left, top, _, _ = win32api.GetMonitorInfo(monitor)["Monitor"]
                     self._monitor, self._origin = handle, (left, top)
@@ -129,7 +131,9 @@ class _DuplicationBackend:
         if region[2] <= region[0] or region[3] <= region[1]:
             return None
         frame = camera.grab(region=region)  # None when the screen has not changed
-        return None if frame is None else np.ascontiguousarray(frame)
+        # BGRA -> BGR; the slice is never contiguous, so this is always a copy out of the
+        # camera's buffer
+        return None if frame is None else np.ascontiguousarray(frame[..., :3])
 
     def close(self) -> None:
         if self._camera is not None:
