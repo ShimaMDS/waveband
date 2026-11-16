@@ -6,8 +6,10 @@ the meter and marks the part of this list that is new to you ("What changed" in 
 ## 0.3.0 (not released yet)
 
 - Six new themes, one for each element: Glacio, Fusion, Electro, Aero, Spectro and Havoc. Each
-  is the WuWa look in that element's colours, taken from its characters. WuWa stays the default;
-  pick one from the tray menu's Theme entry or Settings, Meter.
+  is the WuWa look in that element's colours, taken from its characters, with its own typeface
+  and its own logo in the dashboard (an ice crystal, a flame, a lightning bolt, wind blades, a
+  radiant star, a crescent eclipse). WuWa stays the default; pick one from the tray menu's Theme
+  entry or Settings, Meter.
 - Beta updates: under Settings, The game, "Updates to take" can be Stable (the default) or Beta.
   Beta gets test versions of the next release first (0.3.0-beta.1, beta.2, ...) and still moves
   on to each stable version.

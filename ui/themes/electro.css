@@ -12,7 +12,15 @@
   --line: rgba(214, 200, 255, 0.4);
   --dim: #bdb6d6;
   --wave-rgb: 214, 196, 255;
+  --type: "Bahnschrift", "Segoe UI", "Microsoft YaHei UI", "Yu Gothic UI", sans-serif;
 }
+
+/* even-height digits: some of these fonts draw old-style ones (heights that bounce) by default */
+body { font-stretch: semi-condensed; font-variant-numeric: lining-nums; }
+
+/* the theme's own mark and wordmark in the dashboard's top bar (tools/make_logo.py) */
+.views .brand .brand-mark { background-image: url("../brand/electro-mark.svg"); }
+.views .brand .brand-name { background-image: url("../brand/electro-wordmark.svg"); }
 
 /* the hairline over the meter runs from the element's colour into its second one, from a
    diamond in the element's colour */

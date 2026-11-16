@@ -341,7 +341,12 @@ The tray menu's Theme entry (and Settings, Meter) switches the look at once. **W
 default, follows the game's own HUD. The six element themes (Glacio, Fusion, Electro, Aero,
 Spectro, Havoc) are the WuWa look in that element's colours: the game's own colour for the
 element, a second colour from what that element's characters wear, and a ground, hairline,
-waveform and dashboard background tinted to match. **Classic**, the original dark panel, is
+waveform and dashboard background tinted to match. Each also has its own typeface, one that
+Windows ships (Corbel, Franklin Gothic, Bahnschrift semi-condensed, Candara, Constantia and
+Cambria; where a face draws old-style digits, the digits come from Calibri or Cambria so numbers
+keep an even height), and its own mark and wordmark in the dashboard's top bar, from
+`ui\brand\` (drawn by `tools\make_logo.py`). The program's icon, the installer and the GitHub
+page keep the default Resonance Halo whatever the theme. **Classic**, the original dark panel, is
 there too. Each theme is one stylesheet in `ui\themes` (the element ones are written by
 `tools\make_themes.py`); copy one to make your own and it appears in the menu. Add `&theme=havoc`
 to the dashboard's address to preview one.
@@ -389,8 +394,8 @@ Tools, run with `.venv\Scripts\python tools\<name>.py`:
 | `test_exe.py <folder>` | Smoke-test a built `Waveband.exe` |
 | `render_page.py`, `drive_page.py` | Render or script a page of a running meter, to check the look and the controls without the game |
 | `screenshots.py` | Take the README's pictures from the demo meter |
-| `make_logo.py` | Draw the logo, the icons and the installer's pictures |
-| `make_themes.py` | Write the six element themes from their colours |
+| `make_logo.py` | Draw the logo, the icons, the installer's pictures and each element theme's mark and wordmark |
+| `make_themes.py` | Write the six element themes from their colours and typefaces |
 | `theme_previews.py` | Pictures of every theme's meter and dashboard, and an overview of them all, in `assets\themes\` |
 | `exe_entry.py` | What `Waveband.exe` runs (used by `build_release.py`) |
 

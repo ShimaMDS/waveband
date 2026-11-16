@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect x="8" y="8" width="496" height="496" rx="96" fill="#120810"/><rect x="20" y="20" width="472" height="472" rx="86" fill="none" stroke="#4a1838" stroke-width="3"/>
+  <g transform="translate(51.2,51.2) scale(0.8)">
+  <path d="M81.06,357.00 A202,202 0 0 1 357.00,81.06" fill="none" stroke="#e2556e" stroke-width="12" stroke-opacity="1.0"/>
+  <path d="M430.94,155.00 A202,202 0 0 1 155.00,430.94" fill="none" stroke="#e2556e" stroke-width="12" stroke-opacity="1.0"/>
+  <line x1="60.9" y1="308.3" x2="25.7" y2="284.3" stroke="#e2556e" stroke-width="7" stroke-linecap="butt"/>
+  <line x1="72.9" y1="170.6" x2="61.4" y2="129.6" stroke="#e2556e" stroke-width="7" stroke-linecap="butt"/>
+  <line x1="170.6" y1="72.9" x2="188.2" y2="34.1" stroke="#e2556e" stroke-width="7" stroke-linecap="butt"/>
+  <line x1="308.3" y1="60.9" x2="346.6" y2="42.4" stroke="#e2556e" stroke-width="7" stroke-linecap="butt"/>
+  <line x1="451.1" y1="203.7" x2="486.3" y2="227.7" stroke="#e2556e" stroke-width="7" stroke-linecap="butt"/>
+  <line x1="439.1" y1="341.4" x2="450.6" y2="382.4" stroke="#e2556e" stroke-width="7" stroke-linecap="butt"/>
+  <line x1="341.4" y1="439.1" x2="323.8" y2="477.9" stroke="#e2556e" stroke-width="7" stroke-linecap="butt"/>
+  <line x1="203.7" y1="451.1" x2="165.4" y2="469.6" stroke="#e2556e" stroke-width="7" stroke-linecap="butt"/>
+  <path d="M242.4,138.8 A118,118 0 1 0 365.4,300.2 A101.48,101.48 0 0 1 242.4,138.8 Z" fill="#ffe1ef"/>
+  <circle cx="305.6" cy="218.2" r="101.5" fill="none" stroke="#e649a6" stroke-width="4"/>
+  <path d="M305.56,202.24 L317.08,218.24 L305.56,234.24 L294.04,218.24 Z" fill="#e649a6"/>
+  </g>
+</svg>

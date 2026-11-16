@@ -87,7 +87,12 @@ body.wide { min-height: 100vh; }
   text-transform: uppercase;
 }
 
-.views .brand img { width: 26px; height: 26px; }
+/* The mark and the wordmark are pictures (tools/make_logo.py writes them into ui/brand); an
+   element theme points them at its own. */
+.views .brand-mark,
+.views .brand-name { display: inline-block; background: center / contain no-repeat; }
+.views .brand-mark { width: 26px; height: 26px; background-image: url("brand/wuwa-mark.svg"); }
+.views .brand-name { width: 104px; height: 20px; background-position: left center; background-image: url("brand/wuwa-wordmark.svg"); }
 
 .views a {
   position: relative;
