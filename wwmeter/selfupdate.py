@@ -35,7 +35,6 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from . import __version__, signing
-from .changelog import key as version_key
 from .config import NAME, ROOT
 
 # The repository the releases are published in, as "owner/name". Empty until it exists: the
@@ -45,7 +44,19 @@ REPO = os.environ.get("WAVEBAND_UPDATE_REPO", "ShimaMDS/waveband")
 API = os.environ.get("WAVEBAND_UPDATE_API", "https://api.github.com")
 SUMS = "SHA256SUMS.txt"
 SIGNATURE = SUMS + ".sig"
-_SETUP = re.compile(r"^Waveband-[\w.]+-setup\.exe$", re.IGNORECASE)
+_SETUP = re.compile(r"^Waveband-[\w.-]+-setup\.exe$", re.IGNORECASE)
+_VERSION = re.compile(r"^v?(\d+)\.(\d+)(?:\.(\d+))?(?:-beta\.(\d+))?", re.IGNORECASE)
+
+
+def version_key(version: str) -> tuple[int, ...]:
+    """A version to compare with others: 0.2.0 < 0.2.1 < 0.3.0-beta.1 < 0.3.0-beta.2 < 0.3.0. A
+    build on the way to a version (0.3.0.dev0) counts as that version; anything unreadable as
+    nothing."""
+    found = _VERSION.match(str(version or "").strip())
+    if not found:
+        return ()
+    major, minor, patch, beta = found.groups()
+    return (int(major), int(minor), int(patch or 0), 0 if beta else 1, int(beta or 0))
 _TIMEOUT = 30.0
 EVERY = 24 * 3600.0  # seconds between checks while running
 _FIRST = 8.0  # seconds after start before the first, so the start is not slowed
@@ -57,7 +68,7 @@ class Failed(Exception):
 
 @dataclass(frozen=True)
 class Release:
-    version: str  # "0.2.1"
+    version: str  # "0.2.1", "0.3.0-beta.1"
     page: str  # the release's page, for reading or downloading by hand
     setup_url: str
     setup_name: str
@@ -78,10 +89,10 @@ def _get(url: str):
     return urllib.request.urlopen(request, timeout=_TIMEOUT)
 
 
-# Update channels. Stable releases are the x.y.0 versions, published as ordinary GitHub
-# releases from the `stable` branch; betas are the versions between them (0.2.1 to 0.2.9),
-# published as pre-releases from `beta`. "stable" sees only the first; "beta" sees both, so a
-# beta user moves on to the next stable version as well.
+# Update channels. Stable releases (0.2.0, its fixes 0.2.1 and 0.2.2, then 0.3.0) are ordinary
+# GitHub releases from the `stable` branch; betas are test versions of the next one
+# (0.3.0-beta.1, 0.3.0-beta.2), GitHub pre-releases from `beta`. "stable" sees only the first;
+# "beta" sees both, so a beta user moves on to the stable version as well.
 CHANNELS = ("stable", "beta")
 
 

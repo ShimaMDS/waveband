@@ -3,11 +3,11 @@
 The newest version is first. The first time a newer version of the meter starts, it says so on
 the meter and marks the part of this list that is new to you ("What changed" in the tray menu).
 
-## 0.2.1 (not released yet)
+## 0.3.0 (not released yet)
 
 - Beta updates: under Settings, The game, "Updates to take" can be Stable (the default) or Beta.
-  Beta gets the versions between stable ones first (0.2.1, 0.2.2, ...) and still moves on to
-  each stable version.
+  Beta gets test versions of the next release first (0.3.0-beta.1, beta.2, ...) and still moves
+  on to each stable version.
 
 ## 0.2.0 (2026-11-16)
 

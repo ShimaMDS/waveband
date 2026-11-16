@@ -40,15 +40,18 @@ Windows shows an "unknown publisher" warning and some antivirus programs flag it
 
 | Branch | What it holds | Versions | Published as |
 |---|---|---|---|
-| `main` | Day-to-day work | the next version with `.dev0` | nothing |
-| `beta` | What beta testers get | the ones between stable releases: 0.2.1 to 0.2.9 | GitHub pre-releases |
-| `stable` | What everyone gets | x.y.0: 0.2.0, 0.3.0 | ordinary GitHub releases |
+| `main` | Day-to-day work toward the next version | that version with `.dev0` (0.3.0.dev0) | nothing |
+| `beta` | Test versions of the next version | 0.3.0-beta.1, 0.3.0-beta.2, ... | GitHub pre-releases |
+| `stable` | What everyone gets, and quick fixes to it | 0.2.0, 0.2.1, 0.2.2, then 0.3.0 | ordinary GitHub releases |
 
-Work happens on `main`. For a beta, merge `main` into `beta`, set the version (say 0.2.1) and
-date its changelog section, build and sign from `beta`, tag `v0.2.1` there, and publish with
-`gh release create v0.2.1 --prerelease ...`. For a stable release, merge `beta` into `stable`,
-set the version to the next x.y.0, and publish an ordinary release from `stable`. Afterwards
-merge the release branch back into `main` and set `main` to the next `.dev0`.
+Work happens on `main`. **A beta:** merge `main` into `beta`, set the version to the next beta
+(`0.3.0-beta.1`), build and sign from `beta`, tag `v0.3.0-beta.1` there, and publish with
+`gh release create v0.3.0-beta.1 --prerelease ...`. Its notes go in the next version's changelog
+section ("0.3.0 (beta)"). **A quick fix to stable:** fix it on `stable`, set the version to the
+next patch (`0.2.1`), date a changelog section for it, and publish an ordinary release; then
+merge `stable` into `main` so the fix is not lost. **The next stable version:** merge `beta` into
+`stable`, set the version to `0.3.0`, date its section, and publish an ordinary release; then set
+`main` to the next `.dev0`.
 
 Installed copies on the Stable channel (the default) only see ordinary releases; on Beta (Settings,
 The game, "Updates to take") they see pre-releases too, and still move on to each stable version.
@@ -88,5 +91,5 @@ Before publishing a release, every line should hold:
 - `SHA256SUMS.txt.sig` checks out (`tools\release_key.py verify <out>\SHA256SUMS.txt`), and the
   release has the setup, the zip, the checksums and the signature, tagged `v<version>`.
 - `REPO` in `wwmeter\selfupdate.py` names the repository the release goes to.
-- Published from the right branch: a beta (x.y.1 to x.y.9) from `beta` as a pre-release, a stable
-  version (x.y.0) from `stable` as an ordinary release.
+- Published from the right branch: a beta (`x.y.0-beta.N`) from `beta` as a pre-release, a stable
+  version or a fix to one from `stable` as an ordinary release.

@@ -120,7 +120,32 @@ class ReleaseTest(unittest.TestCase):
             selfupdate.latest()
 
 
+class VersionTest(unittest.TestCase):
+    def test_betas_are_labelled_and_sort_between_releases(self):
+        order = ["0.2.0", "0.2.1", "0.2.2", "0.3.0-beta.1", "0.3.0-beta.2", "0.3.0-beta.10", "0.3.0", "0.3.1"]
+        self.assertEqual(sorted(reversed(order), key=selfupdate.version_key), order)
+
+    def test_a_build_on_the_way_to_a_version_is_that_version(self):
+        self.assertEqual(selfupdate.version_key("0.3.0.dev0"), selfupdate.version_key("0.3.0"))
+
+    def test_a_beta_installer_is_recognised(self):
+        self.assertTrue(selfupdate._SETUP.match("Waveband-0.3.0-beta.1-setup.exe"))
+
+
 class ChannelTest(unittest.TestCase):
+    def test_a_quick_fix_to_stable_reaches_stable(self):
+        with FakeGitHub(version="9.1.1", others=[("9.2.0-beta.1", True, False)]):
+            release = selfupdate.latest(channel="stable")
+        self.assertEqual(release.version, "9.1.1")
+        self.assertTrue(selfupdate.newer(release, "9.1.0"))
+
+    def test_beta_takes_the_newest_labelled_beta(self):
+        with FakeGitHub(version="9.1.1", others=[("9.2.0-beta.1", True, False), ("9.2.0-beta.2", True, False)]):
+            release = selfupdate.latest(channel="beta")
+        self.assertEqual(release.version, "9.2.0-beta.2")
+        self.assertTrue(selfupdate.newer(release, "9.2.0-beta.1"))
+        self.assertFalse(selfupdate.newer(release, "9.2.0"))
+
     def test_stable_sees_only_the_stable_release(self):
         with FakeGitHub(version="9.1.0", others=[("9.1.3", True, False)]):
             self.assertEqual(selfupdate.latest(channel="stable").version, "9.1.0")
