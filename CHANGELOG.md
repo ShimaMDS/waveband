@@ -16,6 +16,9 @@
   and any other version on Stable.
 - Clearer names on the settings page: Keys is now Keybinds, Meter is DPS Meter, and Another PC
   is Import / Export.
+- "Over time" is more accurate: damage over time the log doesn't report (Frazzle, for one) used
+  to end up about 0.8% of the boss's HP short; once the hits stop, it's now counted to within a
+  pixel of the HP bar.
 - Fixes: in the Classic theme the fight clock no longer sits on the waveform, and on the
   dashboard the big figure no longer counts down through the old fight's number after going
   back from an earlier fight.
