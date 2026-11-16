@@ -8,6 +8,9 @@
   defaults move to the new ones by themselves; keys you chose yourself stay, and the Keybinds
   page marks any that won't reach Waveband. Holding Alt also brings up the game's cursor, handy
   for moving the meter.
+- Waveband reserves about 590 MB less memory (commit size 775 MB down to about 185 MB on a
+  16-thread CPU). NumPy's maths library set aside a work buffer for every CPU thread and almost
+  never used it; Waveband needs only one.
 - The tray menu and the testers' guide say "keybinds" too, as the settings page does since 0.3.0.
 - Moving the meter: the line "Drag to move. Scroll to resize." shows again in the WuWa and
   element themes, where it was squeezed into the small diamond at the meter's top left.
