@@ -1,8 +1,5 @@
 # What changed
 
-The newest version is first. The first time a newer version of the meter starts, it says so on
-the meter and marks the part of this list that is new to you ("What changed" in the tray menu).
-
 ## 0.3.0 (not released yet)
 
 - Six new themes, one for each element: Glacio, Fusion, Electro, Aero, Spectro and Havoc. Each
@@ -14,7 +11,7 @@ the meter and marks the part of this list that is new to you ("What changed" in 
   Beta gets test versions of the next release first (0.3.0-beta.1, beta.2, ...) and still moves
   on to each stable version.
 
-## 0.2.0 (2026-11-16)
+## 0.2.0
 
 - The meter has a name, Waveband, and an icon of its own. The program is `Waveband.exe` now and its log file is
   `waveband.log`. To keep your settings and earlier fights, copy `config.json` and the
@@ -73,6 +70,6 @@ the meter and marks the part of this list that is new to you ("What changed" in 
   670 MB. The installer is 148 MB.
 - This list, and a line on the meter the first time a newer version starts.
 
-## 0.1.0 (2026-11-15)
+## 0.1.0
 
 - The first version handed to testers.
