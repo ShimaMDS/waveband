@@ -258,7 +258,7 @@ NAMES = {  # a setting, as a message about it calls it
     "read_numbers": "Reading damage numbers",
     "encounter_timeout": "Seconds before a fight is closed",
     "boss_bar": "The boss bar's place",
-    "show_keys": "Showing the keys",
+    "show_keys": "Showing the keybinds",
     "compact": "The one-line meter",
     "hide_between_fights": "Hiding between fights",
     "language": "The language of names",
@@ -268,7 +268,7 @@ NAMES = {  # a setting, as a message about it calls it
     "check_updates": "Looking for updates",
     "auto_update": "Installing updates without asking",
     "update_channel": "The update channel",
-    "hotkeys": "Keys",
+    "hotkeys": "Keybinds",
     "colours": "Colours",
     "log_dir": "The log folder",
 }

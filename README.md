@@ -54,7 +54,7 @@ dashboard, and copy a fight's summary to paste into chat.
   that element's colours
 - A one-line meter, hiding between fights, and staying out of screenshots and streams
 - Rows that show what you care about: damage per second, total, share, or time on field
-- Keys you rebind by pressing them, and all your settings as one line for another PC
+- Keybinds you set by pressing them, and all your settings as one line to import on another PC
 - Bosses and characters named the way your game names them, in any of its ten text languages
 - One click to update boss data after a patch; Waveband tells you when it's needed
 

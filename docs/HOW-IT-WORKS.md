@@ -306,17 +306,17 @@ against the RFC's own test vectors.
 (`http://127.0.0.1:5055/?view=full#settings`). Changes are checked, saved and used at once; nothing
 needs a restart and no file has to be opened.
 
-- **Keys.** Click a key, then press the one you want. Function keys, letters, digits and the
+- **Keybinds.** Click a keybind, then press the key you want. Function keys, letters, digits and the
   navigation keys work, alone or with Ctrl, Alt or Shift; a letter or digit needs Ctrl or Alt,
   because the game uses those itself. A key another action has is refused.
 - **Colours.** A colour of your own for each element.
-- **Meter.** The theme, damage or percent, the size, and the switches the tray menu has.
+- **DPS Meter.** The theme, damage or percent, the size, and the switches the tray menu has.
 - **Rows.** Which figures each character's row shows and in what order (damage per second, total,
   share, time on field, damage per second on field), and how many decimals.
 - **Game.** The language of names, the game's log folder ("Find it for me" usually does it), the
   boss HP tables, and Waveband's own updates: Stable or Beta, looking for them, and installing
   them without asking.
-- **Another PC.** All settings as one line of text starting `wwmeter1:`, to paste into Waveband on
+- **Import / Export.** All settings as one line of text starting `wwmeter1:`, to paste into Waveband on
   another PC or into a bug report. It leaves out the log folder (its path can contain your
   Windows user name) and the port.
 
@@ -337,7 +337,7 @@ since the version you last ran.
 
 ## Themes and colours
 
-The tray menu's Theme entry (and Settings, Meter) switches the look at once. **WuWa**, the
+The tray menu's Theme entry (and Settings, DPS Meter) switches the look at once. **WuWa**, the
 default, follows the game's own HUD. The six element themes (Glacio, Fusion, Electro, Aero,
 Spectro, Havoc) are the WuWa look in that element's colours: the game's own colour for the
 element, a second colour from what that element's characters wear, and a ground, hairline,

@@ -490,7 +490,7 @@ def run(
     menu.addSeparator()
     menu.addAction("Open the dashboard in a browser", lambda: webbrowser.open(dashboard_url))
     menu.addAction(
-        "Settings: keys, colours, log folder", lambda: webbrowser.open(dashboard_url + "#settings")
+        "Settings: keybinds, colours, log folder", lambda: webbrowser.open(dashboard_url + "#settings")
     )
     menu.addAction("What changed", lambda: webbrowser.open(dashboard_url + "#changes"))
     if update_tables is not None:
