@@ -1,6 +1,6 @@
 # What changed
 
-## 0.3.0 (beta)
+## 0.3.0
 
 - Six new themes, one for each element: Glacio, Fusion, Electro, Aero, Spectro and Havoc. Each
   is the WuWa look in that element's colours, taken from its characters, with its own typeface

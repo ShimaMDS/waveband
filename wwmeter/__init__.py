@@ -3,4 +3,4 @@ screen, and never touches the game process. ``wwmeter`` is its internal name."""
 
 # 0.2.0 is the first public release (on GitHub, as Waveband). Between releases this is the next
 # version with .dev0 on the end.
-__version__ = "0.3.0-beta.1"
+__version__ = "0.3.0"
