@@ -48,21 +48,15 @@ dashboard, and copy a fight's summary to paste into chat.
 
 <img src="docs/images/dashboard-fights.png" alt="The dashboard's Fights page" width="820">
 
-**Your layout.** Two looks, your own element colours, a one-line mode, and rows that show what
-you care about: damage per second, total, share, or time on field.
+**And also:**
 
-<img src="docs/images/overlay-classic.png" alt="The Classic theme" width="300"> &nbsp; <img src="docs/images/overlay-one-line.png" alt="The one-line meter" width="190">
-
-**Easy settings.** Rebind keys by pressing them, pick the language of names, and copy all your
-settings as one line to use on another PC.
-
-<img src="docs/images/dashboard-settings.png" alt="The Settings page" width="820">
-
-**Names in your language.** Bosses and characters are named the way your game names them, in any
-of its ten text languages.
-
-**Ready after a patch.** One click on *Update boss HP tables* fetches the new version's data, and
-Waveband tells you when it's needed.
+- The WuWa theme, after the game's own HUD, in your own element colours if you like (themes
+  for each element are coming in 0.3.0)
+- A one-line meter, hiding between fights, and staying out of screenshots and streams
+- Rows that show what you care about: damage per second, total, share, or time on field
+- Keys you rebind by pressing them, and all your settings as one line for another PC
+- Bosses and characters named the way your game names them, in any of its ten text languages
+- One click to update boss data after a patch; Waveband tells you when it's needed
 
 ## Keys
 
