@@ -73,7 +73,9 @@ by a backup service, an upload or a program reading files, cannot sign anything.
 passphrase long and only in the password manager. Because the passphrase is typed in a terminal,
 `build_release.py` asks for it when run in one; run anywhere else (by an assistant, say), it
 builds everything, says "Not signed" and exits with 1, and the maintainer signs in a terminal:
-`.venv\Scripts\python tools\release_key.py sign <out>\SHA256SUMS.txt`.
+`.venv\Scripts\python tools\release_key.py sign <out>\SHA256SUMS.txt`. Or drag `SHA256SUMS.txt`
+onto `tools\sign_release.bat`: it shows the file, asks for the passphrase, signs and checks the
+signature against the public key in the code.
 
 ## Checklist
 
