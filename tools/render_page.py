@@ -4,6 +4,7 @@ For checking a change to the overlay's look without the game in front:
 
     python tools/render_page.py http://127.0.0.1:5055/?view=overlay out.png [width height]
     python tools/render_page.py "http://127.0.0.1:5055/?view=overlay&theme=classic" out.png 440 400
+    python tools/render_page.py http://127.0.0.1:5055/?view=overlay out.png 440 400 2   (twice as sharp)
 
 The meter has to be running (``run --demo --no-overlay`` on a spare port will do; set the port in
 a config file named by the WWMETER_CONFIG environment variable). ``?view=full`` is the dashboard.
@@ -25,11 +26,15 @@ def main(argv: list[str]) -> int:
         return 2
     url, out = argv[1], argv[2]
     width, height = (int(argv[3]), int(argv[4])) if len(argv) > 4 else (440, 400)
+    # an optional zoom draws the same layout with more pixels: 2 gives a picture twice as sharp
+    zoom = float(argv[5]) if len(argv) > 5 else 1.0
     app = QApplication(["render_page"])
     view = QWebEngineView()
     view.setAttribute(Qt.WA_DontShowOnScreen)
     view.page().setBackgroundColor(QColor("#20262e"))  # the overlay itself is transparent
-    view.resize(width, height)
+    view.resize(round(width * zoom), round(height * zoom))
+    view.loadFinished.connect(lambda _ok: view.setZoomFactor(zoom))
+    view.setZoomFactor(zoom)
     view.setUrl(QUrl(url))
     view.show()
 

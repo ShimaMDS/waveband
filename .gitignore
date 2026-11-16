@@ -31,3 +31,6 @@ learned_parts.json
 
 # Private: the roadmap and the full working notes. Never published.
 private/
+
+# theme previews for looking over locally (tools/theme_previews.py): large, never pushed
+assets/themes/

@@ -396,7 +396,7 @@ Tools, run with `.venv\Scripts\python tools\<name>.py`:
 | `screenshots.py` | Take the README's pictures from the demo meter |
 | `make_logo.py` | Draw the logo, the icons, the installer's pictures and each element theme's mark and wordmark |
 | `make_themes.py` | Write the six element themes from their colours and typefaces |
-| `theme_previews.py` | Pictures of every theme's meter and dashboard, and an overview of them all, in `assets\themes\` |
+| `theme_previews.py` | Pictures of every theme's meter and dashboard, drawn twice as sharp, and a grid of them all, in `assets\themes\` (kept out of git) |
 | `exe_entry.py` | What `Waveband.exe` runs (used by `build_release.py`) |
 
 ## If something looks wrong

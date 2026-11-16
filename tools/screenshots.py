@@ -57,7 +57,7 @@ def _trim(path: str, margin: int = 6) -> None:
                     min(image.height, y1 + margin))).save(path)
 
 
-def _session(settings: dict, shots: list, warm: float) -> None:
+def _session(settings: dict, shots: list, warm: float, zoom: float = 1.0) -> None:
     folder = tempfile.mkdtemp(prefix="waveband-shots-")
     try:
         config = os.path.join(folder, "config.json")
@@ -73,10 +73,10 @@ def _session(settings: dict, shots: list, warm: float) -> None:
             _wait_for(base)
             time.sleep(warm)  # let the made-up fight build up some figures
             for name, page, width, height in shots:
-                subprocess.run([sys.executable, RENDER, base + page, os.path.join(OUT, name), str(width), str(height)],
-                               check=True, cwd=ROOT, stdout=subprocess.DEVNULL)
+                subprocess.run([sys.executable, RENDER, base + page, os.path.join(OUT, name), str(width), str(height),
+                                str(zoom)], check=True, cwd=ROOT, stdout=subprocess.DEVNULL)
                 if name.startswith(("overlay", ".theme")):
-                    _trim(os.path.join(OUT, name))
+                    _trim(os.path.join(OUT, name), round(6 * zoom))
                 print("wrote docs/images/" + name)
         finally:
             meter.terminate()
