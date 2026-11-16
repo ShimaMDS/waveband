@@ -8,8 +8,9 @@ import time
 import zlib
 from dataclasses import asdict
 
-from . import __version__, changelog, clipboard, hotkeys, selfupdate, sessions, settings, update
+from . import __version__, changelog, clipboard, elevation, hotkeys, selfupdate, sessions, settings, update
 from . import config as config_mod
+from .capture import find_game_window
 from .config import ROOT, Config
 from .gamedata import LEARNED_PARTS_PATH, PartShares, apply_language, client_language, enemy_data
 from .summary import fight_summary
@@ -69,6 +70,17 @@ def run(cfg: Config, demo: bool = False, overlay: bool = True) -> int:
 
     def on_keys_taken(names: list[str]) -> None:
         keys_taken[:] = names
+
+    waveband_elevated = elevation.this_process()
+
+    def keys_need_ctrl_or_alt() -> bool:
+        """Whether a key held without Ctrl or Alt won't reach Waveband while the game is in
+        front: the game runs as administrator and Waveband does not. Taken to be so while the
+        game isn't running, as it runs as administrator unless someone changed that."""
+        if waveband_elevated:
+            return False
+        game = find_game_window()
+        return game is None or elevation.window(game) is not False
 
     # The boss HP tables after a game patch: fetched and rebuilt by a program of their own
     # (``wwmeter update``), then read again here without a restart.
@@ -180,7 +192,8 @@ def run(cfg: Config, demo: bool = False, overlay: bool = True) -> int:
         return {
             "reply": "settings",
             "settings": settings.describe(
-                cfg, themes, languages, client_language(cfg.log_dir, tables.language_ids)
+                cfg, themes, languages, client_language(cfg.log_dir, tables.language_ids),
+                keys_need_ctrl_or_alt(),
             ),
             "said": said_now,
             "problems": problems or [],
@@ -211,6 +224,15 @@ def run(cfg: Config, demo: bool = False, overlay: bool = True) -> int:
                 # a key some other program holds would do nothing in the game, and silently
                 after = hotkeys.bindings(cfg.hotkeys)
                 new = [key for action, key in after.items() if key and key != before.get(action)]
+                plain = [key for key in new if hotkeys.needs_ctrl_or_alt(key)]
+                if plain and keys_need_ctrl_or_alt():
+                    several = len(plain) > 1
+                    problems.append(
+                        f"{' and '.join(plain)} won't reach Waveband while you play: the game runs "
+                        "as administrator, and Windows then passes on only keys held with Ctrl or "
+                        f"Alt. Hold Alt with {'them' if several else 'it'}, or run Waveband as "
+                        "administrator."
+                    )
                 held = hotkeys.in_use(new)
                 if held:
                     several = len(held) > 1

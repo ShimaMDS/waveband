@@ -1,7 +1,7 @@
 """The in-game overlay: a transparent, click-through, always-on-top window showing the web UI.
 
 It never takes focus and passes every click to whatever is underneath. "Move mode" (tray menu or
-its hotkey, F11 unless changed) makes it grabbable: drag to move, scroll to resize, then lock it
+its hotkey, Alt+F11 unless changed) makes it grabbable: drag to move, scroll to resize, then lock it
 again.
 """
 

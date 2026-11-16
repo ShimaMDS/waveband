@@ -41,14 +41,18 @@ is from an unknown publisher (it is not signed): choose "More info", then
 
 KEYBINDS  (they only work while the game is the focused window)
 --------
-F7        show the fight before the one on the meter (Shift+F7: the one after)
-F8        show or hide the meter
-Shift+F8  one-line meter: only the clock and the damage per second
-F9        damage per second  /  percent of the enemy's HP per second
-F10       start a new fight
-F11       move mode: drag the meter, scroll to resize, F11 again to lock
+Alt+F7        show the fight before the one on the meter (Alt+Shift+F7: the one after)
+Alt+F8        show or hide the meter
+Alt+Shift+F8  one-line meter: only the clock and the damage per second
+Alt+F9        damage per second  /  percent of the enemy's HP per second
+Alt+F10       start a new fight
+Alt+F11       move mode: drag the meter, scroll to resize, Alt+F11 again to lock
 
-The meter lists the plain keys along its top. To remove that line, untick
+The game runs as administrator, so Windows passes the meter only keys held
+with Ctrl or Alt. If you choose other keys in Settings, keep Ctrl or Alt in
+them (or run the meter as administrator too).
+
+The meter lists the keys without Shift along its top. To remove that line, untick
 "Show the keybinds on the meter" in the tray icon's menu.
 
 Each time you start the meter is a session with its own list of fights,

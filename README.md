@@ -43,7 +43,7 @@ are read off their HP bar and turned into real damage using their actual HP from
 data, for wherever you're fighting them (hologram, tower, open world). Damage over time the log
 skips, like Frazzle or Chafe, shows in its own *Over time* row.
 
-**Every fight, kept.** Step back through earlier fights with F7, browse whole sessions on the
+**Every fight, kept.** Step back through earlier fights with Alt+F7, browse whole sessions on the
 dashboard, and copy a fight's summary to paste into chat.
 
 <img src="docs/images/dashboard-fights.png" alt="The dashboard's Fights page" width="820">
@@ -66,11 +66,14 @@ Only active while the game is in front. Change them in Settings.
 
 | Key | |
 |---|---|
-| F7 / Shift+F7 | Previous / next fight |
-| F8 / Shift+F8 | Hide or show / one-line meter |
-| F9 | Damage or percent of HP |
-| F10 | New fight |
-| F11 | Move and resize (scroll to resize, F11 to lock) |
+| Alt+F7 / Alt+Shift+F7 | Previous / next fight |
+| Alt+F8 / Alt+Shift+F8 | Hide or show / one-line meter |
+| Alt+F9 | Damage or percent of HP |
+| Alt+F10 | New fight |
+| Alt+F11 | Move and resize (scroll to resize, Alt+F11 to lock) |
+
+The game runs as administrator, so Windows only passes keys held with Ctrl or Alt on to
+Waveband. That's why every key has Alt, unless Waveband runs as administrator too.
 
 ## Good to know
 

@@ -11,6 +11,7 @@
 
   const part = {
     panel: $("settings"), said: $("set-said"), keys: $("set-keys"), usualKeys: $("set-keys-usual"),
+    keysAdmin: $("set-keys-admin"),
     colours: $("set-colours"), language: $("set-language"), theme: $("set-theme"),
     unit: $("set-unit"), zoom: $("set-zoom"), zoomShown: $("set-zoom-shown"), log: $("set-log"),
     logState: $("set-log-state"), logUse: $("set-log-use"), logFind: $("set-log-find"),
@@ -110,6 +111,13 @@
         const label = document.createElement("span");
         label.className = "set-name";
         label.textContent = item.label;
+        // said under a key that won't reach Waveband while the game runs as administrator
+        const blocked = document.createElement("span");
+        blocked.className = "set-note bad";
+        blocked.dataset.blocked = item.action;
+        blocked.textContent = "Won't work while you play: the game runs as administrator. Hold Ctrl or Alt with this key.";
+        blocked.hidden = true;
+        label.append(blocked);
         const key = document.createElement("button");
         key.type = "button";
         key.className = "key";
@@ -131,7 +139,9 @@
       key.classList.remove("waiting");
       key.setAttribute("aria-label", `${item.label}: ${item.key || "no key"}. Press to change it.`);
       part.keys.querySelector(`[data-clear="${item.action}"]`).hidden = !item.key;
+      part.keys.querySelector(`[data-blocked="${item.action}"]`).hidden = !item.blocked;
     }
+    part.keysAdmin.hidden = !s.keys_need_ctrl_or_alt;
   }
 
   function stopWaiting() {

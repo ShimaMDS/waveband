@@ -2,6 +2,12 @@
 
 ## 0.3.1 (not released yet)
 
+- **The keys work again: they are Alt+F7 to Alt+F11 now** (Alt+Shift+F7 and Alt+Shift+F8 for the
+  fight after and the one-line meter). The game runs as administrator, and Windows then passes
+  Waveband only keys held with Ctrl or Alt, so F7 to F11 alone did nothing. Keys still on the old
+  defaults move to the new ones by themselves; keys you chose yourself stay, and the Keybinds
+  page marks any that won't reach Waveband. Holding Alt also brings up the game's cursor, handy
+  for moving the meter.
 - The tray menu and the testers' guide say "keybinds" too, as the settings page does since 0.3.0.
 - Moving the meter: the line "Drag to move. Scroll to resize." shows again in the WuWa and
   element themes, where it was squeezed into the small diamond at the meter's top left.
