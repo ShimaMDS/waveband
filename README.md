@@ -99,7 +99,8 @@ run.bat                                        # sets up .venv on first run, the
 
 Python 3.11 or newer. Inside the code, Waveband is still called `wwmeter`.
 [How it works](docs/HOW-IT-WORKS.md) covers the internals and every tool;
-[RELEASING.md](docs/RELEASING.md) covers builds and signed releases.
+[RELEASING.md](docs/RELEASING.md) covers builds and signed releases. Want to help? See
+[CONTRIBUTING.md](CONTRIBUTING.md); pull requests go to `main`.
 
 ## Credits
 

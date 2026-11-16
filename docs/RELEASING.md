@@ -13,11 +13,15 @@ to hold before one goes out.
    `python -m venv build-env`, then
    `build-env\Scripts\python -m pip install -r requirements.txt pyinstaller`, then
    `build-env\Scripts\python tools\build_release.py --out <a folder outside this one>`.
-   It builds `Waveband.exe` with PyInstaller, deletes about 310 MB the meter never loads (most
-   of it parts of Qt that come along with the web view: Qt Quick's modules, 3D, charts, PDF,
-   and every Qt library that nothing left in the folder loads, found by reading the import
-   tables with `pefile`), adds
-   `ui\`, the four data files, the guide, `README.md`, `CHANGELOG.md`, the `docs\` folder,
+   It builds `Waveband.exe` with PyInstaller, with version information (product, version,
+   description; antivirus engines that score files by machine learning flag an exe without
+   it), deletes about 280 MB the meter never loads (most of it parts of Qt that come along
+   with the web view: Qt Quick's modules, 3D, charts, PDF, and every Qt library that nothing
+   left in the folder loads, found by reading the import tables with `pefile`), unpacks
+   PyInstaller's `base_library.zip` into a folder of the same name (Nexus Mods rejects an
+   upload with an archive inside it; the build stops if any is left), adds
+   `ui\`, the data files (the boss HP tables, names, characters, part shares and the text
+   reader's model in `data\ocr`), the guide, `README.md`, `CHANGELOG.md`, the `docs\` folder,
    `selftest.bat`, `LICENSE` and the source, and zips it. Then it compiles the installer,
    `Waveband-<version>-setup.exe`, from `tools\installer\waveband.iss` with Inno Setup 6.7 or
    newer (`winget install JRSoftware.InnoSetup`; it is found where that puts it, or give
