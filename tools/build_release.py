@@ -28,7 +28,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # the other tool
 from wwmeter import __version__  # noqa: E402
 from wwmeter.config import NAME  # noqa: E402
 
-DATA_FILES = ("characters.json", "names.json", "enemy_hp.json", "part_shares.json", "digits.npz",
+# digits.npz stays out: it is only for the damage-number reader, which needs OpenCV (not in the
+# build), and an .npz is a zip, which Nexus Mods rejects as an archive inside the archive
+DATA_FILES = ("characters.json", "names.json", "enemy_hp.json", "part_shares.json",
               "ocr/ch_PP-OCRv3_rec_infer.onnx", "ocr/NOTICE.txt")
 SOURCE_FILES = ("requirements.txt", "run.bat")
 SOURCE_NOTE = (
@@ -167,6 +169,44 @@ def unused_qt(qt: str) -> list[str]:
     return [path for name, path in here.items() if is_qt(name) and name not in needed]
 
 
+def unzip_base_library(release: str) -> int:
+    """Unpack PyInstaller's ``_internal/base_library.zip`` into a folder of the same name.
+
+    It holds the compiled modules of Python's standard library that start the interpreter. Nexus
+    Mods quarantines an upload holding another archive, and this is one. PyInstaller's launcher
+    puts that exact path on Python's search path, so the name has to stay; as a folder, Python
+    reads the modules from it as from any folder (tested: the self-test and a demo run pass).
+    Unpacking the modules straight into ``_internal`` works as well (on the search path too, and
+    no name clashes), if the folder's name is ever the problem. Returns the number of files."""
+    path = os.path.join(release, "_internal", "base_library.zip")
+    if not os.path.isfile(path):
+        return 0
+    unpacked = path + ".unpacked"
+    shutil.rmtree(unpacked, ignore_errors=True)
+    with zipfile.ZipFile(path) as bundle:
+        count = len([n for n in bundle.namelist() if not n.endswith("/")])
+        bundle.extractall(unpacked)
+    os.remove(path)
+    os.rename(unpacked, path)
+    return count
+
+
+# the first bytes of a zip (a file in one, or an empty one) and of a 7z
+_ARCHIVE_MAGIC = (b"PK\x03\x04", b"PK\x05\x06", b"7z\xbc\xaf")
+
+
+def archives_inside(release: str) -> list[str]:
+    """Files in the release that are zips themselves (by their first bytes, whatever the name)."""
+    found = []
+    for folder, _, files in os.walk(release):
+        for file in files:
+            path = os.path.join(folder, file)
+            with open(path, "rb") as fh:
+                if fh.read(4) in _ARCHIVE_MAGIC:
+                    found.append(os.path.relpath(path, release))
+    return found
+
+
 def trim(release: str) -> float:
     """Delete bundled files the meter never loads. Returns the megabytes saved."""
     internal = os.path.join(release, "_internal")
@@ -243,6 +283,7 @@ def main(argv: list[str] | None = None) -> int:
         built = build_exe(work)
     shutil.copytree(built, release)
     print(f"trimmed {trim(release):.0f} MB of files the meter never loads")
+    print(f"unpacked base_library.zip into a folder: {unzip_base_library(release)} files")
 
     shutil.copytree(os.path.join(ROOT, "ui"), os.path.join(release, "ui"))
     os.makedirs(os.path.join(release, "data"))
@@ -270,6 +311,10 @@ def main(argv: list[str] | None = None) -> int:
     with open(os.path.join(source, "README.txt"), "w", encoding="utf-8", newline="\r\n") as fh:
         fh.write(SOURCE_NOTE)
 
+    nested = archives_inside(release)
+    if nested:
+        print("Archives inside the release (Nexus Mods would quarantine it):", ", ".join(nested))
+        return 1
     archive = os.path.join(out, name + ".zip")
     if os.path.exists(archive):
         os.remove(archive)

@@ -1,12 +1,43 @@
-"""The release build: Waveband.exe's version information."""
+"""The release build leaves no archive inside the release (Nexus Mods quarantines those)."""
 
 import os
 import sys
 import tempfile
 import unittest
+import zipfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tools"))
 import build_release  # noqa: E402
+
+
+class ZipFreeTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.release = self.tmp.name
+        internal = os.path.join(self.release, "_internal")
+        os.makedirs(internal)
+        with zipfile.ZipFile(os.path.join(internal, "base_library.zip"), "w") as bundle:
+            bundle.writestr("os.pyc", b"\x00" * 16)
+            bundle.writestr("encodings/__init__.pyc", b"\x00" * 16)
+
+    def test_base_library_becomes_a_folder_of_the_same_name(self):
+        self.assertEqual(build_release.archives_inside(self.release), [os.path.join("_internal", "base_library.zip")])
+        self.assertEqual(build_release.unzip_base_library(self.release), 2)
+        folder = os.path.join(self.release, "_internal", "base_library.zip")
+        self.assertTrue(os.path.isdir(folder))
+        self.assertTrue(os.path.isfile(os.path.join(folder, "encodings", "__init__.pyc")))
+        self.assertEqual(build_release.archives_inside(self.release), [])
+        self.assertEqual(build_release.unzip_base_library(self.release), 0)  # already done
+
+    def test_an_archive_under_another_name_is_found(self):
+        build_release.unzip_base_library(self.release)
+        with zipfile.ZipFile(os.path.join(self.release, "digits.npz"), "w") as bundle:
+            bundle.writestr("a.npy", b"x")
+        self.assertEqual(build_release.archives_inside(self.release), ["digits.npz"])
+
+    def test_digit_templates_are_not_shipped(self):
+        self.assertNotIn("digits.npz", build_release.DATA_FILES)
 
 
 class VersionInfoTest(unittest.TestCase):
