@@ -1,0 +1,114 @@
+WAVEBAND  -  a damage meter for Wuthering Waves  -  version {version}
+===================================================================
+
+A damage meter that sits on top of the game. It only reads the game's own
+log file and looks at the screen. It does not open, read or change the game
+process and it never presses keys for you.
+
+It is an unofficial tool and Kuro Games has not approved it. Use it at your
+own risk. Nothing in it is hidden: the full source is in the "source" folder.
+
+
+START
+-----
+There are two ways to get Waveband. Both are the same program.
+
+The installer (Waveband-<version>-setup.exe) puts it in your Start menu and
+keeps it up to date: when a newer version is out, Waveband says so, and
+"Install update" in the tray icon's menu installs it and starts it again.
+It installs for your Windows account only and needs no administrator rights.
+Coming from 0.1 (called wwmeter)? On the installer's "Bring your settings and
+fights along" page, pick the old folder.
+
+The zip needs no installing, and is what this file came in:
+1. Unzip the whole folder anywhere (not inside Program Files).
+2. Run the game in Borderless or Windowed mode (not exclusive Fullscreen).
+3. Double-click Waveband.exe. Nothing opens: an icon appears in the tray,
+   bottom right, and the meter shows while the game is the focused window.
+4. Fight something. Quit from the tray icon.
+The zip copy tells you when a newer version is out, but you download it
+yourself. Coming from 0.1? Copy config.json and the sessions folder from the
+old folder into this one before step 3.
+
+Either way, Waveband asks GitHub for a newer version when it starts. It sends
+nothing about you or your game; "Look for updates" in Settings switches it
+off. An update is only installed if it is signed with Waveband's own key.
+
+No Python or anything else needs installing. Windows may warn that the file
+is from an unknown publisher (it is not signed): choose "More info", then
+"Run anyway". Some antivirus programs flag unsigned programs built this way.
+
+
+KEYS  (they only work while the game is the focused window)
+----
+F7        show the fight before the one on the meter (Shift+F7: the one after)
+F8        show or hide the meter
+Shift+F8  one-line meter: only the clock and the damage per second
+F9        damage per second  /  percent of the enemy's HP per second
+F10       start a new fight
+F11       move mode: drag the meter, scroll to resize, F11 again to lock
+
+The meter lists the plain keys along its top. To remove that line, untick
+"Show the keys on the meter" in the tray icon's menu.
+
+Each time you start the meter is a session with its own list of fights,
+starting empty. While an earlier fight is shown the meter says so, and goes
+on measuring. Sessions are kept as files in the "sessions" folder; to read
+one again, pick it under "Earlier sessions" in the tray icon's menu, or in
+the list on the left of the dashboard's Fights page.
+
+The tray icon has the same actions, a Theme picker, a switch to hide the
+meter between fights, a switch to hide it from screenshots and streams,
+"Copy this fight's summary" (text for pasting into a chat), "Settings"
+(keys, colours, and which figures each character's row shows), "What changed"
+(what is new in this version), and a fuller dashboard in your browser.
+
+If the meter says a key "is in use by another program", that program got
+the key first and it does nothing in the meter: give the action another key
+(below) or use the tray menu.
+To change a key, pick "Settings: keys, colours, log folder" in the tray
+icon's menu. A page opens in your browser: click the key, then press the one
+you want. The same page has the element colours, the language of the names,
+the game's log folder, and one line of text that holds all your settings
+(paste it into a report, or into the meter on another PC).
+
+
+WHAT IT CAN AND CANNOT MEASURE
+------------------------------
+- Bosses and some elites: damage and DPS. For bosses the number comes from
+  the boss HP bar and the boss's real HP, so it is fine-grained to about
+  0.1% of the boss's HP and has no "biggest hit".
+- A few bosses (roughly 1 placement in 25, mostly some open-world and quest
+  versions): only percent of HP, not damage, unless the meter can work the
+  HP out from one of the boss's breakable parts. It says which it is.
+- Common enemies with no HP bar at the top of the screen: nothing. The
+  meter names the enemy and says so.
+- The split between characters is by who is on field when the damage lands,
+  so off-field damage is counted for the active character.
+- Characters are coloured by element.
+- Enemies and characters are named in the language the game is set to
+  (seen in English, Korean and Japanese).
+- Tested on game version 3.8 at 2560x1440 and in a 1920x1080 window. 4K
+  and ultrawide screens are what this test build still needs to find out
+  about.
+- After a game update, bosses may show percent instead of damage until the
+  boss HP data is refreshed. The meter says so: pick "Update boss HP tables"
+  in the tray icon's menu. It downloads about 260 MB of the game's data from
+  a community copy on GitHub, builds the meter's tables (about a minute) and
+  deletes the download again. If it says the new version is not published
+  yet, try again a day or two later.
+
+
+IF IT DOES NOT WORK
+-------------------
+Double-click selftest.bat. It checks each part and opens a short report
+(selftest.txt). Send that report, your screen resolution and what you were
+fighting. waveband.log in this folder holds any error messages.
+
+- "Can't find the game's log file": pick "Settings: keys, colours, log
+  folder" in the tray icon's menu and paste the game's folder under "The
+  game's log folder", or press "Find it for me".
+- The meter does not show at all: the game must be Borderless or Windowed.
+
+docs\HOW-IT-WORKS.md is the full write-up: how it works, how accurate it is, and what
+has not been verified yet.

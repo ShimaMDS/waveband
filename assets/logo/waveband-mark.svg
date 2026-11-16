@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <path d="M62.42,185.54 A206,206 0 0 1 449.58,185.54" fill="none" stroke="#f0b45a" stroke-width="9" stroke-opacity="1.0"/>
+  <path d="M449.58,326.46 A206,206 0 0 1 62.42,326.46" fill="none" stroke="#f0b45a" stroke-width="9" stroke-opacity="1.0"/>
+  <path d="M160.79,120.02 A166,166 0 0 1 391.98,351.21" fill="none" stroke="#fbf3e4" stroke-width="5" stroke-opacity="0.85"/>
+  <path d="M351.21,391.98 A166,166 0 0 1 160.79,391.98" fill="none" stroke="#fbf3e4" stroke-width="5" stroke-opacity="0.85"/>
+  <path d="M145.15,320.00 A128,128 0 0 1 320.00,145.15" fill="none" stroke="#f0b45a" stroke-width="3" stroke-opacity="0.7"/>
+  <path d="M366.85,192.00 A128,128 0 0 1 192.00,366.85" fill="none" stroke="#f0b45a" stroke-width="3" stroke-opacity="0.7"/>
+  <path d="M256,148 Q268.32,243.68 300,256 Q268.32,268.32 256,364 Q243.68,268.32 212,256 Q243.68,243.68 256,148 Z" fill="#fbf3e4"/>
+  <path d="M256,204 Q262.16,249.84 278,256 Q262.16,262.16 256,308 Q249.84,262.16 234,256 Q249.84,249.84 256,204 Z" fill="#f0b45a"/>
+  <path d="M255.99999999999997,36.0 L266.08,50.0 L255.99999999999997,64.0 L245.91999999999996,50.0 Z" fill="#f0b45a"/>
+  <path d="M256.0,448.0 L266.08,462.0 L256.0,476.0 L245.92,462.0 Z" fill="#f0b45a"/>
+</svg>

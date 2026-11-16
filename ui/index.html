@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Waveband</title>
+<link rel="icon" type="image/png" href="waveband.png">
+<link id="theme" rel="stylesheet" href="themes/wuwa.css">
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+
+<main id="meter" class="meter" data-state="idle" aria-live="off">
+  <div id="keys" class="keys" hidden></div>
+  <div id="viewing" class="viewing" hidden></div>
+  <header class="tape">
+    <canvas id="wave" class="wave" aria-hidden="true"></canvas>
+    <div class="tape-top">
+      <span id="target" class="target">No fight yet</span>
+      <span id="clock" class="clock">0:00</span>
+    </div>
+    <div class="readout">
+      <span id="dps" class="dps">0</span>
+      <span id="unit" class="unit">damage / s</span>
+    </div>
+    <div id="totals" class="totals">Damage shows up here when you land a hit.</div>
+  </header>
+
+  <section id="channels" class="channels" aria-label="Damage by character"></section>
+
+  <footer id="boss" class="boss" hidden>
+    <div class="boss-line">
+      <span id="boss-hp" class="boss-hp"></span>
+      <span id="boss-rate" class="boss-rate"></span>
+      <span id="boss-eta" class="boss-eta"></span>
+    </div>
+    <div class="boss-track"><div id="boss-fill" class="boss-fill"></div></div>
+  </footer>
+
+  <div id="status" class="status" hidden></div>
+</main>
+
+<section id="details" class="details" hidden>
+  <nav id="views" class="views" aria-label="Pages of the dashboard">
+    <span class="brand"><img src="waveband-mark.svg" alt="" width="26" height="26">Waveband</span>
+    <a href="#fights" data-view="fight">Fights</a>
+    <a href="#settings" data-view="settings">Settings</a>
+    <a href="#changes" data-view="changes">What changed</a>
+  </nav>
+
+  <div id="fights" class="panel fights" data-in="fight">
+    <nav id="sessions" class="set-rail sess-rail" aria-label="Sessions"></nav>
+
+    <div class="set-pages">
+      <header class="set-top">
+        <h3 id="history-title" class="set-title">Fights this session</h3>
+      </header>
+      <p class="hint">Click a fight to put it on the meter beside this page. Each start of the
+        meter is a session; an earlier one is opened from the list on the left.</p>
+      <div id="history" class="table"></div>
+      <div class="actions">
+        <button id="back" type="button" class="button main" hidden>Back to the current fight</button>
+        <button id="copy" type="button" class="button">Copy the summary of the fight shown</button>
+        <button id="reset" type="button" class="button">Start a new fight</button>
+      </div>
+
+      <h4 class="set-sub">Skills used <span>by the game's internal names</span></h4>
+      <div id="skills" class="skills"></div>
+
+      <h4 class="set-sub">Signal check</h4>
+      <dl id="health" class="health"></dl>
+    </div>
+  </div>
+
+  <div id="settings" class="panel settings" data-in="settings">
+    <nav id="set-rail" class="set-rail" aria-label="Settings">
+      <a href="#settings-keys" data-page="keys">Keys</a>
+      <a href="#settings-colours" data-page="colours">Colours</a>
+      <a href="#settings-meter" data-page="meter">Meter</a>
+      <a href="#settings-rows" data-page="rows">Rows</a>
+      <a href="#settings-game" data-page="game">Game</a>
+      <a href="#settings-transfer" data-page="transfer">Another PC</a>
+    </nav>
+
+    <div class="set-pages">
+      <header class="set-top">
+        <h3 id="set-title" class="set-title">Keys</h3>
+        <p id="set-said" class="set-said" role="status" hidden></p>
+      </header>
+
+      <section class="set-page" data-page="keys" data-title="Keys">
+        <p class="hint">Click a key, then press the one you want. The keys work only while the
+          game is in front. The game itself uses F1 to F6.</p>
+        <div id="set-keys" class="set-rows"></div>
+        <div class="actions">
+          <button id="set-keys-usual" type="button" class="button">Back to the usual keys</button>
+        </div>
+      </section>
+
+      <section class="set-page" data-page="colours" data-title="Element colours" hidden>
+        <p class="hint">A character's row is drawn in the colour of its element. The meter on
+          this page shows a colour while you pick it.</p>
+        <div id="set-colours" class="set-rows"></div>
+      </section>
+
+      <section class="set-page" data-page="meter" data-title="The meter on screen" hidden>
+        <div class="set-rows">
+          <label class="set-row"><span class="set-name">Look</span>
+            <select id="set-theme"></select></label>
+          <label class="set-row"><span class="set-name">Figures</span>
+            <select id="set-unit">
+              <option value="damage">Damage</option>
+              <option value="percent">Percent of the enemy's HP</option>
+            </select></label>
+          <label class="set-row"><span class="set-name">Size</span>
+            <span class="set-ctl"><input id="set-zoom" type="range" step="5">
+              <output id="set-zoom-shown" class="set-value" for="set-zoom"></output></span></label>
+        </div>
+        <h4 class="set-sub">When and how it shows</h4>
+        <div class="set-rows">
+        <label class="set-row"><span class="set-name">One-line meter</span>
+          <span class="switch"><input id="set-compact" type="checkbox"><i></i></span></label>
+        <label class="set-row"><span class="set-name">Show the keys on the meter</span>
+          <span class="switch"><input id="set-show_keys" type="checkbox"><i></i></span></label>
+        <label class="set-row"><span class="set-name">Hide the meter between fights</span>
+          <span class="switch"><input id="set-hide_between_fights" type="checkbox"><i></i></span></label>
+        <label class="set-row"><span class="set-name">Show the meter only while the game is in front</span>
+          <span class="switch"><input id="set-only_over_game" type="checkbox"><i></i></span></label>
+        <label class="set-row"><span class="set-name">Hide the meter from screenshots and streams
+            <small class="set-note">On Windows 10 a screenshot then has a black box where the
+              meter was.</small></span>
+          <span class="switch"><input id="set-hide_from_capture" type="checkbox"><i></i></span></label>
+        </div>
+      </section>
+
+      <section class="set-page" data-page="rows" data-title="Each character's row" hidden>
+        <p class="hint">Switch on the figures a row shows. The arrows change their order: the
+          top one is the leftmost. With four or five, the bar beside the name gives way to
+          them.</p>
+        <div id="set-figures" class="set-rows"></div>
+        <h4 class="set-sub">Decimals</h4>
+        <div class="set-rows">
+          <label class="set-row"><span class="set-name">A short figure, like 15.38k</span>
+            <select id="set-figure_decimals">
+              <option value="0">0</option><option value="1">1</option><option value="2">2</option>
+            </select></label>
+          <label class="set-row"><span class="set-name">A share, like 34%</span>
+            <select id="set-share_decimals">
+              <option value="0">0</option><option value="1">1</option><option value="2">2</option>
+            </select></label>
+        </div>
+      </section>
+
+      <section class="set-page" data-page="game" data-title="The game" hidden>
+        <div class="set-rows">
+          <label class="set-row"><span class="set-name">Names of enemies and characters</span>
+            <select id="set-language"></select></label>
+        </div>
+        <h4 class="set-sub">Log folder</h4>
+        <p class="hint">Paste the game's folder, its Logs folder or the Client.log file itself.</p>
+        <div class="set-field">
+          <input id="set-log" type="text" spellcheck="false" autocomplete="off" aria-label="The game's log folder">
+          <button id="set-log-use" type="button" class="button main">Use this folder</button>
+        </div>
+        <p id="set-log-state" class="hint set-state"></p>
+        <div class="actions">
+          <button id="set-log-find" type="button" class="button">Find it for me</button>
+        </div>
+        <h4 class="set-sub">Boss HP tables</h4>
+        <p class="hint">What the meter knows each boss's HP and name from. After a game patch,
+          update them: about 260 MB is downloaded, and deleted again once the tables are built.</p>
+        <p id="set-tables-state" class="hint set-state"></p>
+        <div class="actions">
+          <button id="set-tables-update" type="button" class="button">Update boss HP tables</button>
+        </div>
+        <h4 class="set-sub">Waveband updates</h4>
+        <p class="hint">Waveband asks GitHub for a newer version when it starts and once a day.
+          An installed copy updates itself; the zip copy says where to download the new one.</p>
+        <p id="set-app-state" class="hint set-state"></p>
+        <div class="actions">
+          <button id="set-app-check" type="button" class="button">Check now</button>
+          <button id="set-app-install" type="button" class="button main" hidden>Install</button>
+        </div>
+        <div class="set-rows">
+          <label class="set-row"><span class="set-name">Look for updates</span>
+            <span class="switch"><input id="set-check_updates" type="checkbox"><i></i></span></label>
+          <label class="set-row"><span class="set-name">Install updates at start without asking
+              <small class="set-note">Only an installed copy. A fight is never interrupted: it
+                happens as Waveband starts.</small></span>
+            <span class="switch"><input id="set-auto_update" type="checkbox"><i></i></span></label>
+        </div>
+      </section>
+
+      <section class="set-page" data-page="transfer" data-title="The same settings on another PC" hidden>
+        <p class="hint">One line of text holds every setting except the log folder and the
+          port, which belong to this PC.</p>
+        <h4 class="set-sub">From this PC</h4>
+        <div class="set-field">
+          <input id="set-export" type="text" readonly spellcheck="false" aria-label="These settings as one line">
+          <button id="set-export-copy" type="button" class="button">Copy the line</button>
+        </div>
+        <h4 class="set-sub">To this PC</h4>
+        <div class="set-field">
+          <input id="set-import" type="text" spellcheck="false" autocomplete="off"
+            placeholder="Paste a line of settings here" aria-label="A line of settings to use">
+          <button id="set-import-use" type="button" class="button main">Use the pasted settings</button>
+        </div>
+      </section>
+    </div>
+  </div>
+  <div id="changes" class="panel changes" data-in="changes">
+    <header class="set-top">
+      <h3 class="set-title">What changed</h3>
+    </header>
+    <div id="changes-list" class="changes-list"></div>
+  </div>
+</section>
+
+<script src="app.js"></script>
+<script src="settings.js"></script>
+</body>
+</html>

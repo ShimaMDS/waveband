@@ -1,0 +1,15 @@
+{
+ "note": "What share of a boss's full HP the pool of each of its breakable parts is, as the game log reports them (actor name, then the part's tag). Measured in fights where the game's tables give the HP; the meter learns more as it sees them and keeps those in learned_parts.json beside config.json.",
+ "shares": {
+  "BP_ML1QiShiMd00001": {
+   "怪物.common.弱点": 0.15,
+   "怪物.common.背部弱点": 0.25
+  },
+  "BP_ML1WuChangluMd00601": {
+   "怪物.ML1WuChangluMd00601.翅膀": 0.02
+  },
+  "BP_ML1WuMingTanSuoZheMd00401": {
+   "怪物.c230fb21.b77281b1": 0.17
+  }
+ }
+}

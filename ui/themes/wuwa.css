@@ -1,0 +1,365 @@
+/* WuWa theme: follows the game's own HUD so the meter reads as part of it. No boxed panel; a soft
+   scrim behind white type, hairlines that end in a diamond, a pill for the timer like the
+   challenge clock, and thin bars with pointed ends like the HP bars. Fonts are the ones Windows
+   ships; nothing here is taken from the game's files. */
+
+:root {
+  --ink: 9 13 18;
+  --white: #f4f6f8;
+  --dim: #b9c2cc;
+  --line: rgba(244, 246, 248, 0.38);
+  --gold: #f3d48a;
+  --accent: var(--gold);
+  --threat: #f0655c;
+  --wave-rgb: 244, 246, 248;
+
+  /* The game's own element colours (ElementColor in its element table, version 3.8). */
+  --glacio: #41aefb;
+  --fusion: #f0744e;
+  --electro: #b46bff;
+  --aero: #55ffb5;
+  --spectro: #f8e56c;
+  --havoc: #e649a6;
+  /* Characters whose element is not known: greys, so that a colour always means an element. */
+  --slot-1: #c3ced6;
+  --slot-2: #93a6b2;
+  --slot-3: #7892a1;
+
+  --type: "Segoe UI", "Microsoft YaHei UI", "Yu Gothic UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html { font-size: 14px; background: transparent; }
+
+body {
+  margin: 0;
+  padding: 6px;
+  background: transparent;
+  color: var(--white);
+  font-family: var(--type);
+  font-weight: 600;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  user-select: none;
+  text-shadow: 0 1px 2px rgb(var(--ink) / 0.9), 0 0 8px rgb(var(--ink) / 0.55);
+}
+
+/* ---- the meter ------------------------------------------------------------------------- */
+
+.meter {
+  position: relative;
+  width: 400px;
+  padding: 10px 14px 10px 12px;
+  background: linear-gradient(90deg, rgb(var(--ink) / 0.66) 0%, rgb(var(--ink) / 0.5) 62%, rgb(var(--ink) / 0) 100%);
+}
+
+/* hairline across the top, ending in a diamond at the left */
+.meter::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 70px;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--line), rgba(244, 246, 248, 0));
+}
+
+.meter::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: -3px;
+  width: 6px;
+  height: 6px;
+  background: var(--white);
+  transform: rotate(45deg);
+  box-shadow: 0 0 6px rgb(var(--ink) / 0.8);
+}
+
+.tape { position: relative; padding-bottom: 8px; }
+
+.wave {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 26px;
+  bottom: 4px;
+  width: 100%;
+  height: calc(100% - 30px);
+  opacity: 0.55;
+}
+
+.tape-top,
+.readout,
+.totals { position: relative; }
+
+.tape-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* target name, in the colour the game uses for a boss's name */
+.target {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--threat);
+}
+
+.meter[data-state="idle"] .target { color: var(--white); }
+
+/* timer pill, like the challenge clock */
+.clock {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 11px 2px 8px;
+  border: 1px solid rgba(244, 246, 248, 0.28);
+  border-radius: 999px;
+  background: rgb(var(--ink) / 0.58);
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+  text-shadow: none;
+}
+
+.clock::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid var(--dim);
+  border-radius: 50%;
+}
+
+.meter[data-state="live"] .clock::before {
+  border-color: var(--gold);
+  background: radial-gradient(circle, var(--gold) 0 2px, transparent 2.5px);
+}
+
+.readout {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 3px;
+}
+
+.dps {
+  font-size: 2.6rem;
+  font-weight: 700;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.005em;
+}
+
+.unit {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--dim);
+}
+
+.totals {
+  margin-top: 1px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.totals b { font-weight: 700; color: var(--white); }
+
+.meter[data-state="idle"] .dps,
+.meter[data-state="idle"] .unit { opacity: 0.4; }
+
+.meter[data-state="ended"] .wave { opacity: 0.25; }
+
+/* ---- channels: one row per character ---------------------------------------------------- */
+
+.channels {
+  padding: 7px 0 3px;
+  border-top: 1px solid rgba(244, 246, 248, 0.16);
+}
+
+.channels:empty { display: none; }
+
+.channel {
+  --hue: var(--slot-1);
+  display: grid;
+  /* the columns of figures are the ones chosen in the settings */
+  grid-template-columns: 10px minmax(0, 106px) minmax(0, 1fr) var(--row-figures, 54px 36px);
+  align-items: center;
+  gap: 8px;
+  height: 24px;
+}
+
+/* diamond marker; filled for whoever is on field */
+.channel .lamp {
+  width: 7px;
+  height: 7px;
+  margin-left: 1px;
+  border: 1px solid var(--hue);
+  transform: rotate(45deg);
+}
+
+.channel.on-field .lamp { background: var(--hue); box-shadow: 0 0 6px var(--hue); }
+
+.channel .name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.95rem;
+}
+
+/* thin bar with pointed ends */
+.channel .level {
+  height: 5px;
+  background: rgb(var(--ink) / 0.55);
+  clip-path: polygon(3px 0, calc(100% - 3px) 0, 100% 50%, calc(100% - 3px) 100%, 3px 100%, 0 50%);
+}
+
+.channel .level i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--hue) 62%, white), var(--hue));
+  transition: width 0.35s ease-out;
+}
+
+.channel .rate,
+.channel .share {
+  text-align: right;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.channel .share { color: var(--dim); }
+
+.el-glacio { --el: var(--glacio); }
+.el-fusion { --el: var(--fusion); }
+.el-electro { --el: var(--electro); }
+.el-aero { --el: var(--aero); }
+.el-spectro { --el: var(--spectro); }
+.el-havoc { --el: var(--havoc); }
+/* A character is drawn in its element's colour. When two or three share an element, the later
+   ones get a lighter and a darker shade of it so the rows can still be told apart. */
+.elem { --hue: var(--el); }
+.elem.twin-1 { --hue: color-mix(in srgb, var(--el) 55%, white); }
+.elem.twin-2 { --hue: color-mix(in srgb, var(--el) 62%, black); }
+.slot-1 { --hue: var(--slot-1); }
+.slot-2 { --hue: var(--slot-2); }
+.slot-3 { --hue: var(--slot-3); }
+.channel.other { --hue: var(--dim); }
+.channel.other .name { color: var(--dim); }
+
+/* ---- target HP -------------------------------------------------------------------------- */
+
+.boss {
+  padding-top: 7px;
+  border-top: 1px solid rgba(244, 246, 248, 0.16);
+}
+
+.boss-line {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 0.86rem;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.boss-hp { color: var(--white); }
+.boss-eta { margin-left: auto; }
+
+.boss-track {
+  height: 5px;
+  margin-top: 5px;
+  background: rgb(var(--ink) / 0.6);
+  clip-path: polygon(4px 0, calc(100% - 4px) 0, 100% 50%, calc(100% - 4px) 100%, 4px 100%, 0 50%);
+}
+
+.boss-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #ffb24a, #ff5a2e 70%, #f2331f);
+  transition: width 0.3s linear;
+}
+
+/* the line of keys along the top; switched off from the tray menu */
+.keys {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 12px;
+  margin-bottom: 7px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(244, 246, 248, 0.16);
+  font-size: 0.74rem;
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+.keys[hidden] { display: none; }
+
+.keys b {
+  margin-right: 3px;
+  padding: 0 5px 1px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font-weight: 700;
+  color: var(--white);
+}
+
+.status {
+  margin-top: 7px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(244, 246, 248, 0.16);
+  font-size: 0.84rem;
+  color: var(--gold);
+}
+
+/* ---- dashboard view: the game's menu, white type on a dark scrim -------------------------- */
+/* base.css lays the panels out and draws their rows; here is their ground and their colours.
+   The pale paper of the game's dialogs is kept for the one button that carries something out. */
+
+body.wide {
+  overflow: auto;
+  padding: 28px;
+  background: radial-gradient(120% 90% at 20% 0%, #2c4447 0%, #17242a 55%, #10181d 100%);
+  display: grid;
+  grid-template-columns: 420px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+  user-select: text;
+}
+
+.details { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+
+.panel {
+  --fill: #f1efe9;
+  --on-fill: #2c2c29;
+  --knob: #1a2429;
+  --bad: #ff8f85;
+  padding: 20px 24px 24px 16px;
+  border: 1px solid rgba(244, 246, 248, 0.1);
+  border-radius: 4px 18px 4px 4px;
+  background: linear-gradient(135deg, rgb(var(--ink) / 0.62), rgb(var(--ink) / 0.42));
+  color: var(--white);
+  font-weight: 500;
+}
+
+.panel.changes { padding: 20px 28px 26px 24px; }
+
+@media (max-width: 760px) {
+  body.wide { grid-template-columns: minmax(0, 1fr); padding: 12px; }
+  body.wide .meter { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .channel .level i,
+  .boss-fill { transition: none; }
+}

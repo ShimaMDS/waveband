@@ -1,0 +1,353 @@
+/* Classic theme. The fight as a recording: a tape strip of damage per second on top, one mixer channel per
+   character underneath. One typeface (Bahnschrift, ships with Windows), two voices: condensed
+   and heavy for figures, regular width for words. */
+
+:root {
+  --ink: 14 17 24;
+  --bone: #ece6d8;
+  --slate: #8d95a8;
+  --rule: rgba(236, 230, 216, 0.12);
+  --amber: #f2b544;
+  --accent: var(--amber);
+  --bad: #ff8f6b;
+  --wave-rgb: 242, 181, 68;
+
+  /* The game's own element colours (ElementColor in its element table, version 3.8). */
+  --glacio: #41aefb;
+  --fusion: #f0744e;
+  --electro: #b46bff;
+  --aero: #55ffb5;
+  --spectro: #f8e56c;
+  --havoc: #e649a6;
+  /* Characters whose element is not known: greys, so that a colour always means an element. */
+  --slot-1: #c3ced6;
+  --slot-2: #93a6b2;
+  --slot-3: #7892a1;
+
+  --figures: "Bahnschrift", "DIN Alternate", "Segoe UI", sans-serif;
+  --words: "Bahnschrift", "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+[hidden] { display: none !important; }
+
+html {
+  font-size: 14px;
+  background: transparent;
+}
+
+body {
+  margin: 0;
+  padding: 6px;
+  background: transparent;
+  color: var(--bone);
+  font-family: var(--words);
+  font-variation-settings: "wdth" 100, "wght" 400;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ---- the meter ------------------------------------------------------------------------- */
+
+.meter {
+  width: 400px;
+  background: rgb(var(--ink) / 0.82);
+  border: 1px solid rgba(236, 230, 216, 0.1);
+  border-radius: 5px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+.tape {
+  position: relative;
+  padding: 9px 12px 8px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.wave {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.9;
+}
+
+.tape-top,
+.readout,
+.totals { position: relative; }
+
+.tape-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--slate);
+}
+
+.target {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--bone);
+}
+
+.clock {
+  font-family: var(--figures);
+  font-variation-settings: "wdth" 80, "wght" 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
+}
+
+.meter[data-state="live"] .clock::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--fusion);
+  vertical-align: 1px;
+  animation: rec 1.6s steps(2, jump-none) infinite;
+}
+
+@keyframes rec { 50% { opacity: 0.25; } }
+
+.readout {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 2px;
+  text-shadow: 0 1px 6px rgb(var(--ink) / 0.9);
+}
+
+.dps {
+  font-family: var(--figures);
+  font-variation-settings: "wdth" 75, "wght" 650;
+  font-variant-numeric: tabular-nums;
+  font-size: 2.9rem;
+  line-height: 1;
+  letter-spacing: -0.005em;
+}
+
+.unit {
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--slate);
+}
+
+.totals {
+  margin-top: 4px;
+  font-size: 0.86rem;
+  color: var(--slate);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 4px rgb(var(--ink) / 0.9);
+}
+
+.totals b {
+  font-weight: inherit;
+  color: var(--bone);
+}
+
+.meter[data-state="idle"] .dps,
+.meter[data-state="idle"] .unit { opacity: 0.35; }
+
+.meter[data-state="ended"] .wave { opacity: 0.45; }
+
+/* ---- channels -------------------------------------------------------------------------- */
+
+.channels { padding: 6px 12px 4px; }
+
+.channels:empty { display: none; }
+
+.channel {
+  --hue: var(--slot-1);
+  display: grid;
+  /* the columns of figures are the ones chosen in the settings */
+  grid-template-columns: 9px minmax(0, 104px) minmax(0, 1fr) var(--row-figures, 54px 36px);
+  align-items: center;
+  gap: 7px;
+  height: 24px;
+}
+
+.channel .lamp {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1px solid var(--hue);
+}
+
+.channel.on-field .lamp { background: var(--hue); }
+
+.channel .name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.95rem;
+}
+
+.channel .level {
+  height: 9px;
+  background: rgba(236, 230, 216, 0.07);
+  /* segments: 4px lit, 1px gap */
+  -webkit-mask: repeating-linear-gradient(90deg, #000 0 4px, transparent 4px 5px);
+  mask: repeating-linear-gradient(90deg, #000 0 4px, transparent 4px 5px);
+}
+
+.channel .level i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--hue);
+  transition: width 0.35s ease-out;
+}
+
+.channel .rate,
+.channel .share {
+  font-family: var(--figures);
+  font-variation-settings: "wdth" 80, "wght" 500;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  font-size: 0.95rem;
+}
+
+.channel .share { color: var(--slate); }
+
+.el-glacio { --el: var(--glacio); }
+.el-fusion { --el: var(--fusion); }
+.el-electro { --el: var(--electro); }
+.el-aero { --el: var(--aero); }
+.el-spectro { --el: var(--spectro); }
+.el-havoc { --el: var(--havoc); }
+/* A character is drawn in its element's colour. When two or three share an element, the later
+   ones get a lighter and a darker shade of it so the rows can still be told apart. */
+.elem { --hue: var(--el); }
+.elem.twin-1 { --hue: color-mix(in srgb, var(--el) 55%, white); }
+.elem.twin-2 { --hue: color-mix(in srgb, var(--el) 62%, black); }
+.slot-1 { --hue: var(--slot-1); }
+.slot-2 { --hue: var(--slot-2); }
+.slot-3 { --hue: var(--slot-3); }
+.channel.other { --hue: var(--slate); }
+.channel.other .name { color: var(--slate); }
+
+/* ---- boss ------------------------------------------------------------------------------ */
+
+.boss {
+  padding: 6px 12px 9px;
+  border-top: 1px solid var(--rule);
+}
+
+.boss-line {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 0.86rem;
+  color: var(--slate);
+  font-variant-numeric: tabular-nums;
+}
+
+.boss-hp { color: var(--bone); }
+.boss-eta { margin-left: auto; }
+
+.boss-track {
+  height: 3px;
+  margin-top: 5px;
+  background: rgba(236, 230, 216, 0.1);
+}
+
+.boss-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--bone);
+  transition: width 0.3s linear;
+}
+
+/* ---- status ---------------------------------------------------------------------------- */
+
+/* the line of keys along the top; switched off from the tray menu */
+.keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 12px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 0.74rem;
+  letter-spacing: 0.03em;
+  color: var(--slate);
+  white-space: nowrap;
+}
+
+.keys[hidden] { display: none; }
+
+/* the line that says an earlier fight is on show (the rest of it is in base.css) */
+.meter .viewing {
+  margin: 0;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--rule);
+  color: var(--amber);
+}
+
+.keys b {
+  margin-right: 3px;
+  padding: 0 4px;
+  border: 1px solid rgba(236, 230, 216, 0.28);
+  border-radius: 3px;
+  font-family: var(--figures);
+  font-weight: inherit;
+  color: var(--bone);
+}
+
+.status {
+  padding: 6px 12px 7px;
+  border-top: 1px solid var(--rule);
+  font-size: 0.84rem;
+  color: var(--amber);
+}
+
+/* ---- dashboard view (a browser tab; never shown in the in-game overlay) ----------------- */
+/* base.css lays the panels out and draws their rows; here is their ground and their colours. */
+
+body.wide {
+  overflow: auto;
+  padding: 24px;
+  background: #0b0d13;
+  display: grid;
+  grid-template-columns: 412px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+  user-select: text;
+}
+
+body.wide .meter { box-shadow: none; }
+
+.details { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+
+.panel {
+  --fill: var(--bone);
+  --on-fill: rgb(var(--ink));
+  --knob: rgb(var(--ink));
+  --bad: var(--fusion);
+  padding: 18px 20px 20px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  background: rgb(var(--ink));
+  color: var(--bone);
+}
+
+.panel.changes { padding-left: 20px; }
+
+@media (max-width: 760px) {
+  body.wide { grid-template-columns: minmax(0, 1fr); padding: 12px; }
+  body.wide .meter { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .channel .level i,
+  .boss-fill { transition: none; }
+  .meter[data-state="live"] .clock::before { animation: none; }
+}

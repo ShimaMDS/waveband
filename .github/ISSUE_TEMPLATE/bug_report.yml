@@ -1,0 +1,63 @@
+name: Something is wrong
+description: The meter shows wrong figures, does not start, or misbehaves.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. The self-test answers most of the questions a fix needs, so please run it first:
+        **Start menu → Waveband self-test** (or `selftest.bat` in the zip's folder). It writes `selftest.txt` next to Waveband.
+        It holds no personal data beyond the game's install folder; look it over before attaching it.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what the meter showed instead.
+      placeholder: "Killed Crownless at hologram VI; the meter showed 3.1M damage, the boss has about 4.4M HP."
+    validations:
+      required: true
+  - type: textarea
+    id: selftest
+    attributes:
+      label: selftest.txt
+      description: Paste its contents, or drag the file in.
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Waveband version
+      description: In the tray icon's tooltip, or the first line of selftest.txt.
+      placeholder: "0.2.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How you run it
+      options:
+        - Installer
+        - Portable zip
+        - From source
+    validations:
+      required: true
+  - type: input
+    id: screen
+    attributes:
+      label: Screen resolution and game window mode
+      placeholder: "2560x1440, Borderless"
+    validations:
+      required: true
+  - type: input
+    id: language
+    attributes:
+      label: Game language
+      placeholder: "English"
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else
+      description: |
+        A screenshot of the meter helps. If a fight came out wrong, its file from the `sessions` folder next to Waveband does too.
+        Please don't attach the game's own Client.log unless asked: it is large and can hold your player ID.

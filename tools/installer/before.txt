@@ -1,0 +1,9 @@
+Waveband is a damage meter that sits on top of Wuthering Waves.
+
+It is passive: it reads the game's own log file and looks at the screen. It never opens, reads or changes the game process, and it never presses keys for you.
+
+It is an unofficial fan tool, not made or endorsed by Kuro Games, and Kuro Games has not approved it. Whether to run it is your own call.
+
+Waveband installs for your Windows account only, with no administrator rights, and asks GitHub for a newer version when it starts (you can switch that off in its Settings). It sends nothing about you or your game.
+
+Waveband is free software under the GNU Affero General Public License, version 3 or later. Its source is in the "source" folder of the installed program and on GitHub.

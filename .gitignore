@@ -1,0 +1,33 @@
+# Python
+.venv/
+build-env/
+__pycache__/
+*.pyc
+build/
+dist/
+*.spec
+
+# This PC's settings, logs and reports (config.json holds the install path)
+config.json
+wwmeter.log
+waveband.log
+selftest.txt
+*.decoded.txt
+history.json
+
+# Large or personal: recorded fights, labelled number crops, built zips
+recordings/
+release/
+data/number_samples.pkl
+
+# The owner's own scratch folder (screenshots handed over while working)
+TMP/
+
+# One file of fights per launch of the meter
+sessions/
+
+# What share of a boss's HP each of its parts is, as learned on this PC
+learned_parts.json
+
+# Private: the roadmap and the full working notes. Never published.
+private/
