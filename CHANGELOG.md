@@ -3,6 +3,8 @@
 ## 0.3.1 (not released yet)
 
 - The tray menu and the testers' guide say "keybinds" too, as the settings page does since 0.3.0.
+- Moving the meter: the line "Drag to move. Scroll to resize." shows again in the WuWa and
+  element themes, where it was squeezed into the small diamond at the meter's top left.
 
 ## 0.3.0
 
