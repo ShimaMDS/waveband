@@ -8,6 +8,7 @@
   defaults move to the new ones by themselves; keys you chose yourself stay, and the Keybinds
   page marks any that won't reach Waveband. Holding Alt also brings up the game's cursor, handy
   for moving the meter.
+- "Hide the meter between fights" hides it 12 seconds after a fight ends, not 20.
 - Waveband reserves about 590 MB less memory (commit size 775 MB down to about 185 MB on a
   16-thread CPU). NumPy's maths library set aside a work buffer for every CPU thread and almost
   never used it; Waveband needs only one.

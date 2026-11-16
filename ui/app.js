@@ -546,7 +546,9 @@ function renderViewing(view, enc, ui) {
   if (el.viewing.innerHTML !== html) el.viewing.innerHTML = html;
 }
 
-const REST_AFTER = 20; // seconds a finished fight stays up before the meter hides between fights
+// Seconds a finished fight stays up before the meter hides between fights. Long enough to read
+// the result; 20 felt long (owner, 2026-11-17).
+const REST_AFTER = 12;
 
 // The tray toggle asks for damage or percent of HP. Damage becomes percent when the enemy's full
 // HP is known. A fight read off the HP bar arrives as damage if the game's tables gave the boss's

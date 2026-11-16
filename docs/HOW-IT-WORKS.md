@@ -83,7 +83,10 @@ Nothing is sent anywhere.
 
 **One-line meter, hiding, screenshots.** Alt+Shift+F8 shrinks the meter to the clock and the damage
 per second; anything it needs to explain is still shown underneath. "Hide the meter between
-fights" takes it off the screen when no fight is on (a finished fight stays up for 20 seconds).
+fights" takes it off the screen when no fight is on (a finished fight stays up for 12 seconds). A fight
+ends when the game says combat is over, or after a few seconds without damage; while the game
+still counts you as in combat (an enemy nearby that you haven't fought off) it stays open, for
+up to two minutes.
 "Hide from screenshots and streams" keeps the meter out of every capture, Win+Shift+S included;
 it is off by default, so if the meter is missing from a screenshot, that switch is on.
 
