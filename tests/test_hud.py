@@ -76,6 +76,34 @@ class BossBarTest(unittest.TestCase):
         self.assertAlmostEqual(bar.fraction, 0.6839, delta=0.003)  # not the trail's end, near 0.83
         self.assertGreaterEqual(bar.confidence, 0.8)
 
+    def test_the_top_strip_alone_reads_as_the_whole_frame(self):
+        # the meter copies only the strip off the screen and says how tall the game is
+        for label, height in (("full", 1440), ("mid", 1440), ("shattered", 1440), ("full", 1080),
+                              ("mid", 1080), ("cutscene", 1440), ("overworld", 1440)):
+            whole = frame(label, height)
+            rows = round(height * hud.strip_share())
+            self.assertEqual(hud.read_boss_bar(whole[:rows], height=height), hud.read_boss_bar(whole),
+                             f"{label} {height}")
+
+    def test_the_strip_holds_everything_read(self):
+        self.assertEqual(round(1440 * hud.strip_share()), 130)
+        self.assertEqual(round(1080 * hud.strip_share()), 98)  # what the 1080p test strips hold
+        self.assertAlmostEqual(hud.strip_share([0.3, 0.5, 0.7, 0.52]), 0.54)  # a bar placed by hand
+        self.assertEqual(hud.strip_share([0.1, 0.9, 0.9, 0.99]), 1.0)
+
+    def test_the_title_is_cut_from_the_same_place_in_a_strip(self):
+        seen = []
+
+        def ocr(crop):
+            seen.append(crop.copy())
+            return "", 0.0
+
+        whole = frame("mid")
+        hud.read_boss_title(whole, ocr)
+        hud.read_boss_title(whole[:130], ocr, height=1440)
+        self.assertEqual(seen[0].shape, seen[1].shape)
+        self.assertTrue(np.array_equal(seen[0], seen[1]))
+
     def test_ultrawide_is_anchored_to_the_centre(self):
         wide = np.zeros((1440, 3440, 3), np.uint8)
         wide[:, 440:3000] = frame("late")

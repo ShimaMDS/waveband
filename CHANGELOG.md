@@ -14,6 +14,9 @@
 - The copied fight summary is written for Discord: the fight as a small heading, the DPS in
   bold, the characters as a numbered list and the fine print in small grey text. Its columns no
   longer come out ragged.
+- Screen reading copies only the top strip of the game (the boss's name and HP bar) instead of
+  the whole picture: a grab takes about 3 ms instead of 7 at 2560x1440. With "read damage
+  numbers" on, the whole picture is still taken.
 - Waveband reserves about 590 MB less memory (commit size 775 MB down to about 185 MB on a
   16-thread CPU). NumPy's maths library set aside a work buffer for every CPU thread and almost
   never used it; Waveband needs only one.

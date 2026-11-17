@@ -20,6 +20,9 @@ _BAR_TOP, _BAR_BOTTOM = 77, 87
 _BAR_PAD = 0.0379
 # Rows just outside the bar, used to tell the thin bar from orange scenery behind the HUD.
 _GUARD_ABOVE, _GUARD_BELOW = (64, 70), (93, 99)
+# Everything read here lies above this row (the lowest guard row, and some room): the meter
+# copies only this strip off the screen (copying a whole 2560x1440 frame took 3.5 ms).
+_STRIP_BOTTOM = 130
 
 
 @dataclass(slots=True)
@@ -30,6 +33,15 @@ class BossBar:
 
 def _scale(frame_height: int) -> float:
     return frame_height / _REF_HEIGHT
+
+
+def strip_share(override: list[float] | None = None) -> float:
+    """The share of the game's height, from the top, that holds everything read here: the boss's
+    name and bar with its guard rows, or a bar placed by hand (``boss_bar``) with room below."""
+    share = _STRIP_BOTTOM / _REF_HEIGHT
+    if override:
+        share = max(share, float(override[3]) + 0.02)
+    return min(1.0, share)
 
 
 def bar_rect(width: int, height: int, override: list[float] | None = None) -> tuple[int, int, int, int]:
@@ -81,9 +93,14 @@ def _classify(bgr: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return fill, empty
 
 
-def read_boss_bar(frame: np.ndarray, override: list[float] | None = None) -> BossBar | None:
-    """Filled fraction of the boss HP bar, or None when no bar is on screen."""
-    height, width = frame.shape[:2]
+def read_boss_bar(
+    frame: np.ndarray, override: list[float] | None = None, height: int | None = None,
+) -> BossBar | None:
+    """Filled fraction of the boss HP bar, or None when no bar is on screen. ``frame`` may be
+    the top strip of the game only (``strip_share``): ``height`` is then the game's full height,
+    which places and scales everything."""
+    width = frame.shape[1]
+    height = height or frame.shape[0]
     x0, y0, x1, y1 = bar_rect(width, height, override)
     if x1 - x0 < 50 or y1 <= y0 or x0 < 0 or x1 > width:
         return None
@@ -146,9 +163,11 @@ def parse_title(text: str, name_readable: bool = True) -> str:
     return f"{name} (Lv {level})" if level else name
 
 
-def read_boss_title(frame: np.ndarray, ocr) -> str:
-    """Read the name above the boss bar. ``ocr`` is a ``wwmeter.ocr.TextReader``."""
-    height, width = frame.shape[:2]
+def read_boss_title(frame: np.ndarray, ocr, height: int | None = None) -> str:
+    """Read the name above the boss bar. ``ocr`` is a ``wwmeter.ocr.TextReader``; ``height`` as
+    for ``read_boss_bar``."""
+    width = frame.shape[1]
+    height = height or frame.shape[0]
     x0, _, x1, _ = bar_rect(width, height)
     s = _scale(height)
     pad = round(_TITLE_PAD * s)
