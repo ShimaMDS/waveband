@@ -414,6 +414,8 @@ Tools, run with `.venv\Scripts\python tools\<name>.py`:
 | `test_exe.py <folder>` | Smoke-test a built `Waveband.exe` |
 | `render_page.py`, `drive_page.py` | Render or script a page of a running meter, to check the look and the controls without the game; `settings_walk.js` is the `drive_page.py` script that uses every control of the settings page (against a demo meter with settings of its own) |
 | `screenshots.py` | Take the README's pictures from the demo meter |
+| `memory_steps.py [page]` | Load the meter's parts one after another and say how much memory each adds (commit and working set), ending with the overlay page of a running meter |
+| `key_reach.py [key ...]` | Which hotkeys reach a program that isn't run as administrator while the game is in front: run it from an administrator terminal, click into the game, and it taps each key (F13 alone, with Shift, Ctrl, Alt by default) and says which arrived |
 | `make_logo.py` | Draw the logo, the icons, the installer's pictures and each element theme's mark and wordmark |
 | `make_themes.py` | Write the six element themes from their colours and typefaces |
 | `theme_previews.py` | Pictures of every theme's meter and dashboard, drawn twice as sharp, and a grid of them all, in `assets\themes\` (kept out of git) |
