@@ -32,6 +32,10 @@ what every file and tool is for.
 
 - **The tests pass:** `.venv\Scripts\python -m unittest discover -s tests`. A change to how
   fights are read or counted comes with a test that shows it.
+- **Keys are tested as players run Waveband.** The game runs as administrator, and Windows then
+  passes a program that isn't only keys held with Ctrl or Alt. Started from an administrator
+  terminal, Waveband gets every key and hides that, so try a change to the keys with Waveband
+  started normally (`run.bat` from Explorer). `tools\key_reach.py` shows which keys get through.
 - **Waveband stays passive.** It reads the log file the game writes and looks at the screen.
   It doesn't read or write the game's memory, inject anything into the game, press keys for
   you, or touch the game's files. Changes that do any of these won't be merged.
