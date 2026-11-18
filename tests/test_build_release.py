@@ -71,3 +71,12 @@ class VersionInfoTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class WebView2LoaderTest(unittest.TestCase):
+    def test_the_fetched_loader_is_the_pinned_one(self):
+        folder = os.path.join(build_release.ROOT, "lib", "webview2")
+        if not os.path.isdir(folder):
+            self.skipTest("lib\webview2 not fetched (tools\make_webview2_com.py)")
+        for name, digest in build_release.WEBVIEW2_FILES.items():
+            self.assertEqual(build_release.sha256(os.path.join(folder, name)), digest, name)

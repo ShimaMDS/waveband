@@ -11,6 +11,22 @@ from dataclasses import asdict
 from . import __version__, changelog, clipboard, elevation, hotkeys, selfupdate, sessions, settings, update
 from . import config as config_mod
 from .capture import find_game_window
+
+WEBVIEW2_DOWNLOAD = "https://developer.microsoft.com/microsoft-edge/webview2/"
+
+
+def _no_overlay_box(reasons: list[str]) -> None:
+    """A Windows message saying the meter can't be shown, and why."""
+    import ctypes
+
+    text = (
+        "Waveband can't show its meter on this PC, so it has stopped.\n\n"
+        + "\n".join(reasons)
+        + "\n\nThe meter is drawn by Microsoft Edge WebView2, part of Windows 10 and 11. If it "
+        f"is missing, install the WebView2 Runtime from {WEBVIEW2_DOWNLOAD} and start Waveband "
+        "again. Waveband self-test (Start menu) or selftest.bat says more."
+    )
+    ctypes.windll.user32.MessageBoxW(None, text, config_mod.NAME, 0x10 | 0x40000)  # error, topmost
 from .config import ROOT, Config
 from .gamedata import LEARNED_PARTS_PATH, PartShares, apply_language, client_language, enemy_data
 from .summary import fight_summary
@@ -378,6 +394,7 @@ def run(cfg: Config, demo: bool = False, overlay: bool = True) -> int:
             # The one chosen first, the other if it can't: the meter shows either way. A build
             # without Qt (build_release.py --no-qt) has WebView2 alone, whatever was chosen.
             order = ("qt", "webview2") if cfg.overlay_engine == "qt" else ("webview2", "qt")
+            reasons = []
             for engine in order:
                 if engine == "webview2":
                     from . import overlay_webview2
@@ -385,19 +402,25 @@ def run(cfg: Config, demo: bool = False, overlay: bool = True) -> int:
                     try:
                         return overlay_webview2.run(*args, app_actions=app_actions)
                     except overlay_webview2.Unavailable as why:
-                        print(f"WebView2 can't show the overlay ({why})", flush=True)
-                    except Exception:  # noqa: BLE001 - a fault in an overlay must not end the meter
+                        reasons.append(f"WebView2 can't show the overlay ({why})")
+                    except Exception as fault:  # noqa: BLE001 - a fault in an overlay must not end the meter
                         import traceback
 
                         traceback.print_exc()
-                        print("The WebView2 overlay stopped with the error above", flush=True)
+                        reasons.append(f"The WebView2 overlay stopped ({fault!r})")
                 else:
                     try:
                         from . import overlay as overlay_mod
                     except ImportError as error:
-                        print(f"Qt is not in this copy of Waveband ({error})", flush=True)
+                        reasons.append(f"Qt is not in this copy of Waveband ({error})")
                         continue
                     return overlay_mod.run(*args, app_actions=app_actions)
+                print(reasons[-1], flush=True)
+            if config_mod.HEADLESS:
+                # No window, no tray icon and nothing on a console: running on would leave a
+                # meter nobody can see or quit. Say why and stop.
+                _no_overlay_box(reasons)
+                return 1
         print("no overlay window; press Ctrl+C to quit", flush=True)
         while True:
             time.sleep(1.0)

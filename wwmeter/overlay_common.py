@@ -85,7 +85,8 @@ def process_name(hwnd: int) -> str:
 
 
 def game_in_front(cfg: config_mod.Config, own: int) -> bool:
-    """True while the game, the overlay (window ``own``) or a screenshot tool has focus."""
+    """True while the game, the overlay (window ``own``; 0 when the overlay's own window never
+    counts) or a screenshot tool has focus."""
     import win32gui
 
     from .capture import find_game_window
@@ -94,12 +95,12 @@ def game_in_front(cfg: config_mod.Config, own: int) -> bool:
     if game is None:
         return False
     foreground = win32gui.GetForegroundWindow()
+    if not foreground:  # nothing in front (focus changing, the lock screen): not the game
+        return False
     if foreground in (game, own):
         return True
     # Taking a screenshot moves focus to the snipping tool; the overlay has to stay up for that
     # or it would vanish from every screenshot.
-    if not foreground:
-        return False
     tools = {str(name).lower() for name in cfg.capture_tools or ()}
     return process_name(foreground) in tools
 

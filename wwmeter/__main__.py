@@ -38,6 +38,7 @@ def main(argv: list[str] | None = None) -> int:
 
         stream = open(config.LOG_PATH, "a", encoding="utf-8", buffering=1)
         sys.stdout = sys.stderr = stream
+        config.HEADLESS = True
     else:
         # Skill and enemy names are Chinese. Sent to a file or a pipe, Windows encodes output
         # in the system code page, which has no such characters: print "?" instead of failing.

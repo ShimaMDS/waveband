@@ -73,7 +73,14 @@ def descendants(pid: int) -> list[tuple[int, str]]:
         "-not ($ids -contains $p.ProcessId)) { $ids += $p.ProcessId; $more = $true } } }; "
         "$all | Where-Object { ($ids -contains $_.ProcessId) -and $_.ProcessId -ne %d } | ForEach-Object { '{0} {1}' -f $_.ProcessId, $_.Name }"
     ) % (pid, pid)
-    out = subprocess.run(["powershell", "-NoProfile", "-Command", script], capture_output=True, text=True).stdout
+    out = ""
+    # the process query comes back empty now and then right after heavy work (seen after two
+    # builds in a row, 2026-11-19): ask again rather than report a meter with no web view
+    for _ in range(3):
+        out = subprocess.run(["powershell", "-NoProfile", "-Command", script], capture_output=True, text=True).stdout
+        if out.strip():
+            break
+        time.sleep(1.0)
     rows = [line.split(None, 1) for line in out.splitlines() if line.strip()]
     return [(int(pid_text), name.strip()) for pid_text, name in rows]
 

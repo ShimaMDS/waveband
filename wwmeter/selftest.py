@@ -128,8 +128,13 @@ def _checks(cfg: config.Config):
         if not webview and not qt:
             raise RuntimeError(f"{missing}, and no Qt to draw the meter instead. Install the WebView2 "
                                "Runtime from https://developer.microsoft.com/microsoft-edge/webview2/")
-        chosen = "qt" if cfg.overlay_engine == "qt" or not webview else "webview2"
-        uses = "drawn by Qt" + ("" if cfg.overlay_engine == "qt" else ", as WebView2 is missing")             if chosen == "qt" else "drawn by WebView2"
+        # as app.py picks: the chosen one first, the other when it can't
+        if cfg.overlay_engine == "qt" and qt:
+            uses = "drawn by Qt (chosen in Settings)"
+        elif webview:
+            uses = "drawn by WebView2"
+        else:
+            uses = "drawn by Qt, as WebView2 is missing"
         return f"{uses}; " + "; ".join(part for part in (webview or missing, qt or "no Qt") if part)
 
     def keys():

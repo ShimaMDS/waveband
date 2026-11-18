@@ -87,6 +87,34 @@ class ScreenTest(unittest.TestCase):
         self.assertFalse(on_a_screen(2500, 1420, 424, 380, self.SCREENS))  # 20 px showing: not enough
 
 
+class GameInFrontTest(unittest.TestCase):
+    GAME, OVERLAY, OTHER = 100, 200, 300
+
+    def check(self, foreground, own, process=""):
+        cfg = Config(log_dir="")
+        with mock.patch("wwmeter.capture.find_game_window", return_value=self.GAME), \
+                mock.patch("win32gui.GetForegroundWindow", return_value=foreground), \
+                mock.patch.object(overlay_common, "process_name", return_value=process):
+            return overlay_common.game_in_front(cfg, own)
+
+    def test_the_game_in_front(self):
+        self.assertTrue(self.check(self.GAME, 0))
+        self.assertTrue(self.check(self.GAME, self.OVERLAY))
+
+    def test_the_overlay_counts_only_when_named(self):
+        self.assertTrue(self.check(self.OVERLAY, self.OVERLAY))  # the Qt overlay
+        self.assertFalse(self.check(self.OVERLAY, 0))  # WebView2's, brought up by the tray menu
+
+    def test_nothing_in_front_is_not_the_game(self):
+        # found in the 0.3.2 audit: with own 0, "0 in (game, 0)" read as the game in front
+        self.assertFalse(self.check(0, 0))
+        self.assertFalse(self.check(0, self.OVERLAY))
+
+    def test_a_screenshot_tool_keeps_it_up(self):
+        self.assertTrue(self.check(self.OTHER, 0, "snippingtool.exe"))
+        self.assertFalse(self.check(self.OTHER, 0, "chrome.exe"))
+
+
 class FakeOverlay:
     def __init__(self):
         self.moving = False
