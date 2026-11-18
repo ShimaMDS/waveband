@@ -569,15 +569,37 @@ class Tray:
     def show_menu(self, items: list[Item]) -> None:
         """The menu at the mouse; runs what was picked."""
         gui, con = self._gui, self._con
-        actions: dict[int, Callable[[], None]] = {}
-        menus = []
+        root, actions = build_menu(items)
+        try:
+            x, y = gui.GetCursorPos()
+            # the menu closes when clicked away from only if its window is in front for it
+            try:
+                gui.SetForegroundWindow(self.hwnd)
+            except Exception:  # noqa: BLE001 - Windows may refuse; the menu still works
+                pass
+            chosen = gui.TrackPopupMenu(root, con.TPM_RETURNCMD | con.TPM_NONOTIFY | con.TPM_RIGHTBUTTON,
+                                        x, y, 0, self.hwnd, None)
+            gui.PostMessage(self.hwnd, WM_NULL, 0, 0)
+        finally:
+            gui.DestroyMenu(root)  # takes its submenus with it
+        if chosen and actions.get(chosen) is not None:
+            actions[chosen]()
 
-        def build(entries: list[Item]) -> int:
-            menu = gui.CreatePopupMenu()
-            menus.append(menu)
+
+def build_menu(items: list[Item]) -> tuple[int, dict[int, Callable[[], None]]]:
+    """A Windows popup menu of ``items``, and the action behind each command ID. The caller
+    destroys the menu (its submenus go with it); if making it fails, nothing is left behind."""
+    import win32con as con
+    import win32gui as gui
+
+    actions: dict[int, Callable[[], None]] = {}
+
+    def build(entries: list[Item]) -> int:
+        menu = gui.CreatePopupMenu()
+        try:
             for item in entries:
                 if item.separator:
-                    gui.AppendMenu(menu, con.MF_SEPARATOR, 0, None)
+                    gui.AppendMenu(menu, con.MF_SEPARATOR, 0, "")  # pywin32 refuses None here
                     continue
                 text = f"{item.text}\t{item.key}" if item.key else item.text
                 flags = con.MF_STRING
@@ -591,21 +613,12 @@ class Tray:
                 command = len(actions) + 1
                 actions[command] = item.action
                 gui.AppendMenu(menu, flags, command, text)
-            return menu
+        except Exception:
+            gui.DestroyMenu(menu)  # and the submenus already in it
+            raise
+        return menu
 
-        root = build(items)
-        x, y = gui.GetCursorPos()
-        # the menu closes when clicked away from only if its window is in front for it
-        try:
-            gui.SetForegroundWindow(self.hwnd)
-        except Exception:  # noqa: BLE001 - Windows may refuse; the menu still works
-            pass
-        chosen = gui.TrackPopupMenu(root, con.TPM_RETURNCMD | con.TPM_NONOTIFY | con.TPM_RIGHTBUTTON,
-                                    x, y, 0, self.hwnd, None)
-        gui.PostMessage(self.hwnd, WM_NULL, 0, 0)
-        gui.DestroyMenu(root)  # takes its submenus with it
-        if chosen and actions.get(chosen) is not None:
-            actions[chosen]()
+    return build(items), actions
 
 
 # -- running it -----------------------------------------------------------------------------------
