@@ -114,10 +114,6 @@ class Config:
     # True keeps the overlay out of screenshots, streams and recordings. On Windows 10 that makes
     # it a black box in Win+Shift+S, so it is off by default.
     hide_from_capture: bool = False
-    # What draws the overlay: "webview2" (Edge's web view, part of Windows) or "qt" (Qt's own
-    # Chromium, as up to 0.3.1). Kept for one version in case WebView2 misbehaves somewhere;
-    # read when the meter starts.
-    overlay_engine: str = "webview2"
     # Programs that may take focus without the overlay hiding (so it appears in screenshots).
     capture_tools: list[str] = field(
         default_factory=lambda: [
@@ -150,6 +146,9 @@ class Config:
     show_keys: bool = True
     # One-line meter: only the fight clock and the total per second.
     compact: bool = False
+    # Frames a second the meter's bars and figure move at: 60, or 120 for a smoother look. Each
+    # frame is a picture of the page the PC has to make while it moves (in a fight).
+    overlay_fps: int = 60
     # Take the meter off the screen when no fight is on. A finished fight stays up for a while
     # first, and anything the meter has to say (no log, HP not known) keeps it up.
     hide_between_fights: bool = False

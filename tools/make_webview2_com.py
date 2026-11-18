@@ -219,9 +219,14 @@ def main() -> int:
         os.makedirs(OUT_LIB, exist_ok=True)
         for inside, outside in (("build/native/x64/WebView2Loader.dll", "WebView2Loader.dll"),
                                 ("LICENSE.txt", "LICENSE.txt")):
-            with open(os.path.join(OUT_LIB, outside), "wb") as f:
-                f.write(z.read(inside))
-    print(f"copied WebView2Loader.dll and LICENSE.txt into {OUT_LIB}")
+            data, path = z.read(inside), os.path.join(OUT_LIB, outside)
+            if os.path.isfile(path):
+                with open(path, "rb") as f:
+                    if f.read() == data:
+                        continue  # already there (and a running Waveband may have the DLL loaded)
+            with open(path, "wb") as f:
+                f.write(data)
+    print(f"WebView2Loader.dll and LICENSE.txt are in {OUT_LIB}")
     vtables, iids = parse(header)
     write(vtables, iids)
     return 0

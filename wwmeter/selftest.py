@@ -114,28 +114,10 @@ def _checks(cfg: config.Config):
         from . import overlay_webview2
 
         try:
-            webview = f"WebView2 Runtime {overlay_webview2.runtime_version()}"
+            return f"drawn by WebView2 Runtime {overlay_webview2.runtime_version()}"
         except overlay_webview2.Unavailable as why:
-            webview = ""
-            missing = f"no WebView2 ({why})"
-        try:
-            from PySide6.QtCore import qVersion
-            from PySide6.QtWebEngineWidgets import QWebEngineView  # noqa: F401 - the import is the test
-
-            qt = f"Qt {qVersion()} with its web view"
-        except ImportError:
-            qt = ""
-        if not webview and not qt:
-            raise RuntimeError(f"{missing}, and no Qt to draw the meter instead. Install the WebView2 "
-                               "Runtime from https://developer.microsoft.com/microsoft-edge/webview2/")
-        # as app.py picks: the chosen one first, the other when it can't
-        if cfg.overlay_engine == "qt" and qt:
-            uses = "drawn by Qt (chosen in Settings)"
-        elif webview:
-            uses = "drawn by WebView2"
-        else:
-            uses = "drawn by Qt, as WebView2 is missing"
-        return f"{uses}; " + "; ".join(part for part in (webview or missing, qt or "no Qt") if part)
+            raise RuntimeError(f"{why}. The meter is drawn by Microsoft Edge WebView2: install the "
+                               "WebView2 Runtime from https://developer.microsoft.com/microsoft-edge/webview2/") from why
 
     def keys():
         chosen = hotkeys.bindings(cfg.hotkeys)

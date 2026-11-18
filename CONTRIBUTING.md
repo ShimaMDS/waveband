@@ -22,7 +22,7 @@ git clone https://github.com/ShimaMDS/waveband.git
 cd waveband
 run.bat                                                       # sets up .venv, starts the meter
 .venv\Scripts\python -m pip install -r requirements-dev.txt   # for the tests and tools\
-.venv\Scripts\python tools\make_webview2_com.py               # WebView2's loader (without it: Qt's overlay)
+.venv\Scripts\python tools\make_webview2_com.py               # WebView2's loader: the overlay needs it
 .venv\Scripts\python -m wwmeter run --demo                    # a made-up fight, no game needed
 ```
 

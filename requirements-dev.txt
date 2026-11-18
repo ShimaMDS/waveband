@@ -4,3 +4,6 @@
 opencv-python
 # tools\collect_number_samples.py, and where data\ocr\ch_PP-OCRv3_rec_infer.onnx comes from
 rapidocr-onnxruntime
+# tools\render_page.py, drive_page.py, screenshots.py and memory_steps.py load pages in Qt's web
+# view, and tools\make_logo.py draws with Qt; the meter itself has no Qt since 0.3.2
+PySide6

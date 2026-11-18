@@ -19,7 +19,7 @@
     importUse: $("set-import-use"), figures: $("set-figures"),
     tablesState: $("set-tables-state"), tablesUpdate: $("set-tables-update"),
     appState: $("set-app-state"), appCheck: $("set-app-check"), appInstall: $("set-app-install"),
-    channel: $("set-update_channel"), engine: $("set-overlay_engine"),
+    channel: $("set-update_channel"), fps120: $("set-fps120"),
     figureDecimals: $("set-figure_decimals"), shareDecimals: $("set-share_decimals"),
   };
   const FLAGS = ["compact", "show_keys", "hide_between_fights", "only_over_game", "hide_from_capture",
@@ -415,8 +415,7 @@
     for (const flag of FLAGS) $("set-" + flag).checked = Boolean(s[flag]);
     if (!busy(part.log)) part.log.value = s.log_dir;
     if (!busy(part.channel)) part.channel.value = s.update_channel || "stable";
-    if (!busy(part.engine)) part.engine.value = s.overlay_engine || "webview2";
-    $("set-engine-row").hidden = !s.qt_available;
+    part.fps120.checked = s.overlay_fps === 120;
     setText(part.logState, s.log_found
       ? "The meter is reading Client.log in this folder."
       : "There is no Client.log in this folder. The game writes one when it starts.");
@@ -485,7 +484,7 @@
   }
   part.appCheck.addEventListener("click", () => send({ cmd: "check_app" }));
   part.channel.addEventListener("change", () => change({ update_channel: part.channel.value }));
-  part.engine.addEventListener("change", () => change({ overlay_engine: part.engine.value }));
+  part.fps120.addEventListener("change", () => change({ overlay_fps: part.fps120.checked ? 120 : 60 }));
   part.appInstall.addEventListener("click", () => send({ cmd: "install_app" }));
   stateWatchers.push((state) => drawApp((state.ui || {}).app));
   stateWatchers.push((state) => drawTables((state.ui || {}).tables));

@@ -339,6 +339,8 @@ def run(cfg: Config, demo: bool = False, overlay: bool = True) -> int:
             "keys": hotkeys.hints(cfg.hotkeys) if cfg.show_keys else [],
             "compact": cfg.compact,
             "hide_between_fights": cfg.hide_between_fights,
+            # frames a second the bars and the figure move at
+            "fps": cfg.overlay_fps if cfg.overlay_fps in (60, 120) else 60,
             # what a character's row shows, and how finely
             "figures": settings.row_figures(cfg.row_figures),
             "decimals": [settings.decimals(cfg.figure_decimals, 2), settings.decimals(cfg.share_decimals, 0)],
@@ -384,42 +386,28 @@ def run(cfg: Config, demo: bool = False, overlay: bool = True) -> int:
         if overlay:
             args = (
                 server.url + "?view=overlay", cfg, tracker.reset, dashboard, tracker.view_step,
-                copy_summary, on_keys_taken, earlier_sessions, open_session,
-                update_tables, update_finished,
+                copy_summary, on_keys_taken, earlier_sessions, open_session, update_finished,
             )
             app_actions = {"check": check_app, "install": install_app, "said": app_said,
                            "available": lambda: app_updates.release.version
                            if app_updates.status == "available" and app_updates.release else "",
                            "set_quit": lambda do: quit_app.update(do=do)}
-            # The one chosen first, the other if it can't: the meter shows either way. A build
-            # without Qt (build_release.py --no-qt) has WebView2 alone, whatever was chosen.
-            order = ("qt", "webview2") if cfg.overlay_engine == "qt" else ("webview2", "qt")
-            reasons = []
-            for engine in order:
-                if engine == "webview2":
-                    from . import overlay_webview2
+            from . import overlay_webview2
 
-                    try:
-                        return overlay_webview2.run(*args, app_actions=app_actions)
-                    except overlay_webview2.Unavailable as why:
-                        reasons.append(f"WebView2 can't show the overlay ({why})")
-                    except Exception as fault:  # noqa: BLE001 - a fault in an overlay must not end the meter
-                        import traceback
+            try:
+                return overlay_webview2.run(*args, app_actions=app_actions)
+            except overlay_webview2.Unavailable as why:
+                reason = f"WebView2 can't show the overlay ({why})"
+            except Exception as fault:  # noqa: BLE001 - said below, then the meter stops cleanly
+                import traceback
 
-                        traceback.print_exc()
-                        reasons.append(f"The WebView2 overlay stopped ({fault!r})")
-                else:
-                    try:
-                        from . import overlay as overlay_mod
-                    except ImportError as error:
-                        reasons.append(f"Qt is not in this copy of Waveband ({error})")
-                        continue
-                    return overlay_mod.run(*args, app_actions=app_actions)
-                print(reasons[-1], flush=True)
+                traceback.print_exc()
+                reason = f"The overlay stopped ({fault!r})"
+            print(reason, flush=True)
             if config_mod.HEADLESS:
                 # No window, no tray icon and nothing on a console: running on would leave a
                 # meter nobody can see or quit. Say why and stop.
-                _no_overlay_box(reasons)
+                _no_overlay_box([reason])
                 return 1
         print("no overlay window; press Ctrl+C to quit", flush=True)
         while True:

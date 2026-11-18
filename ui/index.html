@@ -123,6 +123,10 @@
         <div class="set-rows">
         <label class="set-row"><span class="set-name">One-line meter</span>
           <span class="switch"><input id="set-compact" type="checkbox"><i></i></span></label>
+        <label class="set-row"><span class="set-name">Smoother meter: 120 frames a second
+            <small class="set-note">60 unless switched on. Each frame is a picture of the meter
+              your PC makes while it moves, next to the game's own.</small></span>
+          <span class="switch"><input id="set-fps120" type="checkbox"><i></i></span></label>
         <label class="set-row"><span class="set-name">Show the keybinds on the meter</span>
           <span class="switch"><input id="set-show_keys" type="checkbox"><i></i></span></label>
         <label class="set-row"><span class="set-name">Hide the meter between fights</span>
@@ -133,14 +137,6 @@
             <small class="set-note">On Windows 10 a screenshot then has a black box where the
               meter was.</small></span>
           <span class="switch"><input id="set-hide_from_capture" type="checkbox"><i></i></span></label>
-        <label id="set-engine-row" class="set-row" hidden><span class="set-name">What draws the meter
-            <small class="set-note">WebView2 is the web view built into Windows. Qt is what drew
-              it up to 0.3.1, kept for this version in case WebView2 misbehaves on your PC.
-              Takes effect the next time Waveband starts.</small></span>
-          <select id="set-overlay_engine">
-            <option value="webview2">WebView2</option>
-            <option value="qt">Qt</option>
-          </select></label>
         </div>
       </section>
 
