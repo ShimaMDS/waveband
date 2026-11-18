@@ -24,7 +24,8 @@ to hold before one goes out.
    upload with an archive inside it; the build stops if any is left), adds
    `ui\`, WebView2's loader and its licence (`lib\webview2\`), the data files (the boss HP tables, names, characters, part shares and the text
    reader's model in `data\ocr`), the guide, `README.md`, `CHANGELOG.md`, the `docs\` folder,
-   `selftest.bat`, `LICENSE` and the source, and zips it. Then it compiles the installer,
+   `selftest.bat`, `LICENSE` and the source (only what git keeps: the build has to run in a
+   clone, and a file never committed stays out), and zips it. Then it compiles the installer,
    `Waveband-<version>-setup.exe`, from `tools\installer\waveband.iss` with Inno Setup 6.7 or
    newer (`winget install JRSoftware.InnoSetup`; it is found where that puts it, or give
    `--iscc`), writes `SHA256SUMS.txt` with the SHA-256 of the zip and the setup, and signs that

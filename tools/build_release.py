@@ -178,10 +178,21 @@ def trim(release: str) -> float:
     return saved / 1e6
 
 
+def tracked(folder: str) -> list[str]:
+    """The names of the files directly in ``folder`` that git keeps. A file only on this PC (one
+    never added, such as a script held back until it may be published) is not among them."""
+    out = subprocess.run(["git", "ls-files", "-z", "--", "."], cwd=folder, capture_output=True, check=True)
+    names = [name for name in out.stdout.decode("utf-8").split("\0") if name]
+    return sorted(name for name in names if "/" not in name)
+
+
 def copy_python(source: str, target: str) -> None:
-    """The Python files of a folder, and the steps file drive_page.py is run with."""
+    """The Python files of a folder that git keeps, and the steps file drive_page.py is run with.
+    Only what git keeps: the source in a release is what was committed, never a file that lies in
+    the folder on the PC that built it (seen 2026-11-19: tools\\make_nexus_images.py, held back
+    from the repository, went into a build made from the working folder)."""
     os.makedirs(target, exist_ok=True)
-    for name in sorted(os.listdir(source)):
+    for name in tracked(source):
         if name.endswith((".py", ".js")):
             shutil.copy2(os.path.join(source, name), os.path.join(target, name))
 
@@ -205,6 +216,12 @@ def main(argv: list[str] | None = None) -> int:
     missing = [f for f in DATA_FILES if not os.path.isfile(os.path.join(ROOT, "data", f))]
     if missing:
         print(f"Missing from data\\: {missing}. Build enemy_hp.json with tools\\build_enemy_hp.py first.")
+        return 1
+    try:
+        tracked(os.path.join(ROOT, "tools"))
+    except (OSError, subprocess.CalledProcessError):
+        print("Build from a git checkout: the source in the release is what git keeps, and git can't "
+              "say here (no git, or this folder isn't a clone).")
         return 1
     missing = [f for f in WEBVIEW2_FILES if not os.path.isfile(os.path.join(ROOT, "lib", "webview2", f))]
     if missing:

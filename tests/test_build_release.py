@@ -80,3 +80,25 @@ class WebView2LoaderTest(unittest.TestCase):
             self.skipTest("lib\webview2 not fetched (tools\make_webview2_com.py)")
         for name, digest in build_release.WEBVIEW2_FILES.items():
             self.assertEqual(build_release.sha256(os.path.join(folder, name)), digest, name)
+
+
+class SourceTest(unittest.TestCase):
+    def test_only_what_git_keeps_goes_into_the_source(self):
+        # seen 2026-11-19: a script held back from the repository went into a build
+        with tempfile.TemporaryDirectory() as folder:
+            import subprocess
+
+            tools = os.path.join(folder, "tools")
+            os.makedirs(tools)
+            for name in ("kept.py", "held_back.py", "steps.js", "notes.txt"):
+                with open(os.path.join(tools, name), "w") as fh:
+                    fh.write("# x\n")
+            subprocess.run(["git", "init", "-q"], cwd=folder, check=True)
+            subprocess.run(["git", "add", "tools/kept.py", "tools/steps.js", "tools/notes.txt"], cwd=folder, check=True)
+            target = os.path.join(folder, "out")
+            build_release.copy_python(tools, target)
+            self.assertEqual(sorted(os.listdir(target)), ["kept.py", "steps.js"])
+
+    def test_this_checkout_has_its_tools_tracked(self):
+        names = build_release.tracked(os.path.join(build_release.ROOT, "tools"))
+        self.assertIn("build_release.py", names)
