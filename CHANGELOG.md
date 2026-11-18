@@ -1,6 +1,6 @@
 # What changed
 
-## 0.3.2 (not released yet)
+## 0.3.2 (beta)
 
 - **The meter is drawn by WebView2**, the web view built into Windows 10 and 11, instead of a
   copy of Chromium that came with Waveband. It looks and works as before: on top of the game,
