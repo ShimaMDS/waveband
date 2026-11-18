@@ -115,10 +115,10 @@ fighting. waveband.log in this folder holds any error messages.
   folder" in the tray icon's menu, open Game and paste the game's folder under
   "Log folder", or press "Find it for me".
 - The meter does not show at all: the game must be Borderless or Windowed.
-  If it still does not, the meter is drawn by WebView2 (the web view built
-  into Windows) since 0.3.2: in Settings, DPS Meter, set "What draws the
-  meter" to Qt (what drew it up to 0.3.1) and start Waveband again. Please
-  report it with your selftest.txt.
+  If it still does not, run selftest.bat: since 0.3.2 the meter is drawn by
+  WebView2 (the web view built into Windows), and the report's "overlay
+  window" line says whether it is there. Without it, install the WebView2
+  Runtime from Microsoft's site. Please report it with your selftest.txt.
 
 docs\HOW-IT-WORKS.md is the full write-up: how it works, how accurate it is, and what
 has not been verified yet.

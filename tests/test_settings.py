@@ -245,6 +245,16 @@ class OverlayEngineTest(unittest.TestCase):
             self.assertTrue(refused[0].startswith("What draws the meter: "), refused)
         self.assertEqual(cfg.overlay_engine, "qt")
 
+    def test_a_copy_without_qt_offers_no_choice(self):
+        cfg = Config(log_dir="x", overlay_engine="qt")
+        with mock.patch.object(settings, "_has_qt", return_value=False):
+            shown = settings.describe(cfg, THEMES, LANGUAGES, "en")
+        self.assertFalse(shown["qt_available"])
+        self.assertEqual(shown["overlay_engine"], "webview2")  # what will draw it
+        with mock.patch.object(settings, "_has_qt", return_value=True):
+            shown = settings.describe(cfg, THEMES, LANGUAGES, "en")
+        self.assertEqual((shown["qt_available"], shown["overlay_engine"]), (True, "qt"))
+
     def test_it_stays_on_this_pc(self):
         source = Config(log_dir="x", overlay_engine="qt")
         target = Config(log_dir="y")

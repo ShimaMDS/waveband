@@ -375,25 +375,29 @@ def run(cfg: Config, demo: bool = False, overlay: bool = True) -> int:
                            "available": lambda: app_updates.release.version
                            if app_updates.status == "available" and app_updates.release else "",
                            "set_quit": lambda do: quit_app.update(do=do)}
-            if cfg.overlay_engine != "qt":
-                from . import overlay_webview2
+            # The one chosen first, the other if it can't: the meter shows either way. A build
+            # without Qt (build_release.py --no-qt) has WebView2 alone, whatever was chosen.
+            order = ("qt", "webview2") if cfg.overlay_engine == "qt" else ("webview2", "qt")
+            for engine in order:
+                if engine == "webview2":
+                    from . import overlay_webview2
 
-                try:
-                    return overlay_webview2.run(*args, app_actions=app_actions)
-                except overlay_webview2.Unavailable as why:
-                    # Qt's overlay takes over: the meter shows either way
-                    print(f"WebView2 can't show the overlay ({why}); using Qt's", flush=True)
-                except Exception:  # noqa: BLE001 - a fault in the new overlay must not end the meter
-                    import traceback
+                    try:
+                        return overlay_webview2.run(*args, app_actions=app_actions)
+                    except overlay_webview2.Unavailable as why:
+                        print(f"WebView2 can't show the overlay ({why})", flush=True)
+                    except Exception:  # noqa: BLE001 - a fault in an overlay must not end the meter
+                        import traceback
 
-                    traceback.print_exc()
-                    print("The WebView2 overlay stopped with the error above; using Qt's", flush=True)
-            try:
-                from . import overlay as overlay_mod
-            except ImportError as error:
-                print(f"no overlay: Qt is not here either ({error})", flush=True)
-            else:
-                return overlay_mod.run(*args, app_actions=app_actions)
+                        traceback.print_exc()
+                        print("The WebView2 overlay stopped with the error above", flush=True)
+                else:
+                    try:
+                        from . import overlay as overlay_mod
+                    except ImportError as error:
+                        print(f"Qt is not in this copy of Waveband ({error})", flush=True)
+                        continue
+                    return overlay_mod.run(*args, app_actions=app_actions)
         print("no overlay window; press Ctrl+C to quit", flush=True)
         while True:
             time.sleep(1.0)

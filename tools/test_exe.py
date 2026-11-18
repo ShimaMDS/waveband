@@ -88,8 +88,9 @@ def has_qt(release: str | None) -> bool:
     return os.path.isdir(os.path.join(release, "_internal", "PySide6"))
 
 
-def run_demo(command: list[str], engine: str, picture: str) -> int:
-    """One demo run with this overlay engine. The number of checks that failed."""
+def run_demo(command: list[str], engine: str, picture: str, chosen: str | None = None) -> int:
+    """One demo run that should be drawn by ``engine``, with ``chosen`` (default: the same) as
+    the setting. The number of checks that failed."""
     window_class, helper = ENGINES[engine]
     on_screen = engine == "webview2"
     width, height = 424, 380
@@ -98,7 +99,7 @@ def run_demo(command: list[str], engine: str, picture: str) -> int:
     handle, settings = tempfile.mkstemp(suffix=".json")
     with os.fdopen(handle, "w") as fh:
         json.dump({"port": _PORT, "only_over_game": False, "overlay_x": x, "overlay_y": y,
-                   "overlay_engine": engine}, fh)
+                   "overlay_engine": chosen or engine}, fh)
     env = dict(os.environ, WWMETER_CONFIG=settings)
     failed = 0
     process = subprocess.Popen([*command, "run", "--demo"], env=env)
@@ -181,7 +182,10 @@ def main(argv: list[str]) -> int:
 
     for engine in ENGINES:
         if engine == "qt" and not has_qt(release):
-            print("[qt] not in this build: skipped")
+            # Qt chosen in a build without it: WebView2 has to draw the meter all the same
+            print("[qt] not in this build: Qt chosen, WebView2 expected")
+            root, ext = os.path.splitext(picture)
+            failed += run_demo(command, "webview2", f"{root}-qt-chosen{ext}", chosen="qt")
             continue
         root, ext = os.path.splitext(picture)
         failed += run_demo(command, engine, picture if engine == "webview2" else f"{root}-qt{ext}")

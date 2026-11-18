@@ -416,6 +416,7 @@
     if (!busy(part.log)) part.log.value = s.log_dir;
     if (!busy(part.channel)) part.channel.value = s.update_channel || "stable";
     if (!busy(part.engine)) part.engine.value = s.overlay_engine || "webview2";
+    $("set-engine-row").hidden = !s.qt_available;
     setText(part.logState, s.log_found
       ? "The meter is reading Client.log in this folder."
       : "There is no Client.log in this folder. The game writes one when it starts.");

@@ -35,8 +35,9 @@ nothing can draw over exclusive fullscreen. Errors go to `waveband.log` beside t
 
 **What draws it.** The meter is a web page (`ui\`) shown in a window of its own: since 0.3.2 by
 WebView2, the web view Windows 10 and 11 already have, and up to 0.3.1 by Qt's own copy of
-Chromium. Qt is kept for one version as a fallback: Settings, DPS Meter, "What draws the meter",
-and Waveband uses it by itself when WebView2 is missing or won't start (`waveband.log` says so).
+Chromium, which made the download three times the size. Releases have WebView2 alone. Run from
+source with Qt installed, Qt still takes over when WebView2 is missing or won't start, and
+Settings, DPS Meter, "What draws the meter" picks it by hand (`waveband.log` says which drew it).
 WebView2 keeps a cache in `%LOCALAPPDATA%\Waveband\WebView2`; the uninstaller deletes it.
 
 **Keys.** They work only while the game is in front, so they stay free everywhere else. The game
@@ -338,8 +339,8 @@ against the RFC's own test vectors.
   Alt is taken, but marked: it won't reach Waveband while the game, run as administrator, is in
   front, unless Waveband runs as administrator too.
 - **Colours.** A colour of your own for each element.
-- **DPS Meter.** The theme, damage or percent, the size, the switches the tray menu has, and what
-  draws the meter (WebView2 or Qt).
+- **DPS Meter.** The theme, damage or percent, the size, and the switches the tray menu has (and,
+  run from source with Qt installed, what draws the meter).
 - **Rows.** Which figures each character's row shows and in what order (damage per second, total,
   share, time on field, damage per second on field), and how many decimals.
 - **Game.** The language of names, the game's log folder ("Find it for me" usually does it), the
@@ -439,8 +440,9 @@ Tools, run with `.venv\Scripts\python tools\<name>.py`:
 - **Not sure what's wrong:** run "Waveband self-test" from the Start menu, `selftest.bat` in the
   zip, or `python -m wwmeter selftest`. It checks each part and writes `selftest.txt`.
 - **The meter doesn't show:** the game has to be in front, in Borderless or Windowed mode. If it
-  still doesn't, look in `waveband.log` and the self-test's "overlay window" line; switching
-  "What draws the meter" to Qt and starting Waveband again gets the old overlay back.
+  still doesn't, the self-test's "overlay window" line and `waveband.log` say why. Without the
+  WebView2 Runtime, install it from
+  [Microsoft](https://developer.microsoft.com/microsoft-edge/webview2/).
 - **The meter is missing from screenshots:** "Hide from screenshots and streams" is on.
 - **"Can't find the game's log file":** Settings, The game, "Find it for me", or paste the game's
   folder. The log lives in `...\Wuthering Waves Game\Client\Saved\Logs`.
