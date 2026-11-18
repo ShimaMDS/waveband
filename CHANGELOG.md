@@ -1,5 +1,29 @@
 # What changed
 
+## 0.3.1
+
+- **The keys work again: they are Alt+F7 to Alt+F11 now** (Alt+Shift+F7 and Alt+Shift+F8 for the
+  fight after and the one-line meter). The game runs as administrator, and Windows then passes
+  Waveband only keys held with Ctrl or Alt, so F7 to F11 alone did nothing. Keys still on the old
+  defaults move to the new ones by themselves; keys you chose yourself stay, and the Keybinds
+  page marks any that won't reach Waveband. Holding Alt also brings up the game's cursor, handy
+  for moving the meter.
+- "Hide the meter between fights" hides it 12 seconds after a fight ends, not 20.
+- Starting a fight while an earlier one is on show switches the meter to the new fight by
+  itself, instead of only saying that one is running.
+- The copied fight summary is written for Discord: the fight as a small heading, the DPS in
+  bold, the characters as a numbered list and the fine print in small grey text. Its columns no
+  longer come out ragged.
+- Screen reading copies only the top strip of the game (the boss's name and HP bar) instead of
+  the whole picture: a grab takes about 3 ms instead of 7 at 2560x1440. With "read damage
+  numbers" on, the whole picture is still taken.
+- Waveband reserves about 590 MB less memory (commit size 775 MB down to about 185 MB on a
+  16-thread CPU). NumPy's maths library set aside a work buffer for every CPU thread and almost
+  never used it; Waveband needs only one.
+- The tray menu and the testers' guide say "keybinds" too, as the settings page does since 0.3.0.
+- Moving the meter: the line "Drag to move. Scroll to resize." shows again in the WuWa and
+  element themes, where it was squeezed into the small diamond at the meter's top left.
+
 ## 0.3.0
 
 - Six new themes, one for each element: Glacio, Fusion, Electro, Aero, Spectro and Havoc. Each
@@ -11,8 +35,8 @@
   now read by the same text recognizer as before, run on its own, without the larger libraries
   that came with it; it reads them the same way, and a little faster.
 - Beta updates: under Settings, Game, "Updates to take" can be Stable or Beta. Stable tells you
-  about releases (0.3.0, then 0.4.0) only; Beta also about the test versions between them (0.3.1,
-  0.3.2, ...) and still moves on to each stable version. Until you pick, a beta of Waveband is on Beta
+  about releases only; Beta also about the test version each one gets first (0.3.1-beta.1 before
+  0.3.1) and still moves on to each stable version. Until you pick, a beta of Waveband is on Beta
   and any other version on Stable.
 - Clearer names on the settings page: Keys is now Keybinds, Meter is DPS Meter, and Another PC
   is Import / Export.

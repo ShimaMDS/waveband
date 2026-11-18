@@ -120,7 +120,9 @@ class OwnChangelogTest(unittest.TestCase):
     def test_versions_are_newest_first_and_each_has_notes(self):
         keys = [changelog.key(v["version"]) for v in self.versions]
         self.assertEqual(keys, sorted(set(keys), reverse=True))
-        for version in self.versions:
+        for place, version in enumerate(self.versions):
+            if place == 0 and ".dev" in __version__:
+                continue  # the next version's section, on main: empty until its first change
             self.assertTrue(version["notes"], version["version"])
 
     def test_the_first_version_out_is_in_the_list(self):

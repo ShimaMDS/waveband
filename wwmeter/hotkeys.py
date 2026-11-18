@@ -1,8 +1,13 @@
-"""Hotkey names as written in config.json ("F8", "Ctrl+Alt+M") to what Windows wants.
+"""Hotkey names as written in config.json ("Alt+F8", "Ctrl+Alt+M") to what Windows wants.
 
-The defaults are function keys the game leaves alone, two of them with Shift. The game's own key
-table (3.8) binds F1 to F4 to menus and uses F1 to F6 to switch tabs inside menus; F12 is avoided
-because Windows reserves it for debuggers and Steam takes screenshots with it.
+The defaults are Alt with function keys the game leaves alone, two of them with Alt+Shift. The
+game's own key table (3.8) binds F1 to F4 to menus and uses F1 to F6 to switch tabs inside menus;
+F12 is avoided because Windows reserves it for debuggers and Steam takes screenshots with it.
+
+Alt is there because the game runs as administrator. While it is in front, Windows passes a
+program that does not only the keys held with Ctrl or Alt (see ``elevation``): F8 alone, or
+Shift+F8, never reaches Waveband. Up to 0.3.0 the defaults were bare (F7 to F11) and did nothing.
+Holding Alt in the game also brings up the mouse cursor, which move mode wants anyway.
 """
 
 from __future__ import annotations
@@ -11,13 +16,13 @@ MOD_ALT, MOD_CONTROL, MOD_SHIFT, MOD_WIN = 0x1, 0x2, 0x4, 0x8
 
 # action -> key. The order is the order of the tray menu.
 DEFAULTS = {
-    "older": "F7",          # look at the fight before the one on show
-    "newer": "Shift+F7",    # and back towards the running one
-    "toggle": "F8",   # show or hide the overlay
-    "compact": "Shift+F8",  # one-line meter
-    "unit": "F9",     # damage or percent of HP
-    "reset": "F10",   # start a new fight
-    "move": "F11",    # move or resize the overlay
+    "older": "Alt+F7",          # look at the fight before the one on show
+    "newer": "Alt+Shift+F7",    # and back towards the running one
+    "toggle": "Alt+F8",         # show or hide the overlay
+    "compact": "Alt+Shift+F8",  # one-line meter
+    "unit": "Alt+F9",           # damage or percent of HP
+    "reset": "Alt+F10",         # start a new fight
+    "move": "Alt+F11",          # move or resize the overlay
     # Hiding the overlay from screenshots and streams has no key unless one is set: pressed by
     # accident it makes the overlay vanish from every screenshot with nothing on screen to say why.
     "capture": "",
@@ -25,6 +30,13 @@ DEFAULTS = {
     "rest": "",       # hide the meter between fights, or stop hiding it (tray menu by default)
     "copy": "",       # put the summary of the fight on show on the clipboard (tray menu by default)
 }
+# The defaults up to 0.3.0, which never reach a Waveband that is not run as administrator.
+OLD_DEFAULTS = {
+    "older": "F7", "newer": "Shift+F7", "toggle": "F8", "compact": "Shift+F8", "unit": "F9",
+    "reset": "F10", "move": "F11",
+}
+# Settings written before the defaults gained Alt have no "hotkeys_revision"; see off_old_defaults.
+REVISION = 1
 # What each key is called in the line of keys along the top of the meter. The line has room for
 # about five, so the two Shift keys are left to the tray menu, which lists every key.
 _HINT_LABELS = {
@@ -133,6 +145,33 @@ def with_new_actions(configured: dict) -> dict[str, str]:
         else:
             merged[action] = "" if parse(key) in used else key
     return merged
+
+
+def off_old_defaults(configured: dict) -> dict[str, str]:
+    """A hotkey table from settings written up to 0.3.0, with each key still at its old default
+    moved to the new one (F8 to Alt+F8). A key the user chose stays, and so does an old default
+    whose new key the user has already given to something else."""
+    moved = dict(configured)
+    for action, old in OLD_DEFAULTS.items():
+        key = moved.get(action)
+        if not isinstance(key, str) or parse(key) is None or parse(key) != parse(old):
+            continue
+        new = DEFAULTS[action]
+        if any(parse(other) == parse(new) for name, other in moved.items()
+               if name != action and isinstance(other, str)):
+            continue
+        moved[action] = new
+    return moved
+
+
+def needs_ctrl_or_alt(key: str) -> bool:
+    """True for a key that doesn't reach a program which isn't run as administrator while a
+    window which is, like the game, is in front: one held without Ctrl or Alt. Measured on
+    Windows 10 with the game in front: F8, PageDown and Shift+F8 never came; Ctrl+F8, Alt+F8,
+    Alt+Shift+F8 and Ctrl+Shift+F12 did. (Win was not tried; it is counted with the ones that
+    don't, so the settings page says so rather than stay quiet about a key that may do nothing.)"""
+    parsed = parse(key)
+    return parsed is not None and not parsed[0] & (MOD_CONTROL | MOD_ALT)
 
 
 def in_use(keys: list[str]) -> list[str]:

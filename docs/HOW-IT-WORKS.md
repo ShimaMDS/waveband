@@ -38,43 +38,59 @@ itself uses F1 to F6.
 
 | Key | What it does |
 |---|---|
-| F7 / Shift+F7 | The fight before / after the one on the meter |
-| F8 / Shift+F8 | Hide or show the meter / one-line meter |
-| F9 | Damage per second, or percent of the enemy's HP per second |
-| F10 | Start a new fight |
-| F11 | Move mode: drag the meter, scroll to resize, F11 again to lock |
+| Alt+F7 / Alt+Shift+F7 | The fight before / after the one on the meter |
+| Alt+F8 / Alt+Shift+F8 | Hide or show the meter / one-line meter |
+| Alt+F9 | Damage per second, or percent of the enemy's HP per second |
+| Alt+F10 | Start a new fight |
+| Alt+F11 | Move mode: drag the meter, scroll to resize, Alt+F11 again to lock |
 
-The plain keys are listed along the top of the meter ("Show the keys on the meter" turns that
+Why Alt: the game runs as administrator, and while a program that runs as administrator is in
+front, Windows passes a program that doesn't only the keys held with Ctrl or Alt. F8 alone, or
+Shift+F8, never reaches Waveband; that keeps any program from reading what is typed into an
+administrator's window. Up to 0.3.0 the keys were F7 to F11 without Alt and did nothing for
+that reason; settings still on those keys move to the Alt ones by themselves. A key without
+Ctrl or Alt can still be chosen, for a Waveband run as administrator; the settings page says
+when one won't arrive. Holding Alt in the game also brings up the mouse cursor, which move mode
+wants anyway.
+
+The keys without Shift are listed along the top of the meter ("Show the keybinds on the meter" turns that
 off). Three more actions have no key until you give them one: hiding between fights, copying a
 fight's summary, and the line of keys. All of them are also in the tray menu. If another program
-already holds one of these keys, Windows won't give it to Waveband; the meter says so ("F9 is in
-use by another program"), and you can pick another key in Settings.
+already holds one of these keys, Windows won't give it to Waveband; the meter says so ("Alt+F9 is
+in use by another program"), and you can pick another key in Settings.
 
 **The tray menu** has every action, a theme picker, and opens the dashboard in your browser. The
 dashboard has three pages: Fights, Settings and What changed.
 
 **Sessions and earlier fights.** Each start of Waveband is a session. Finished fights are saved
 as they end, one file per session in the `sessions` folder (`sessions\2026-11-15_16-30-05.json`),
-and the list starts empty at every start. F7 steps back through this session's fights on the
-meter itself and Shift+F7 steps forward again; a line on the meter says which fight is shown,
-and the meter keeps measuring behind it. Earlier sessions open from the tray menu or from the
+and the list starts empty at every start. Alt+F7 steps back through this session's fights on
+the meter itself and Alt+Shift+F7 steps forward again; a line on the meter says which fight is shown,
+and the meter keeps measuring behind it. When a new fight starts, the meter goes back to it by
+itself; stepping back during a fight still works. Earlier sessions open from the tray menu or from the
 list on the dashboard's Fights page. They are only read: new fights still go to the current
-session. Session files are plain JSON and are never deleted by Waveband.
+session, and a new fight closes the earlier session on show. Session files are plain JSON and are never deleted by Waveband.
 
 **Copying a fight.** "Copy this fight's summary" puts the fight on show on the clipboard as a few
-lines of text:
+lines written in Discord's markdown, ready to paste into a chat:
 
-    Fallacy of No Return: Tethys System (Lv 70) | 1:06 | 682,649 damage | 10,293 DPS | 100% of 682,649 HP
-    Hiyuki       602,165 (88.2%)  9,080 DPS
-    Lynae        54,522 (8.0%)  822 DPS
-    Shorekeeper  25,963 (3.8%)  391 DPS
-    Measured from the boss HP bar and the boss's HP from the game's data. Split by who was on field. Waveband 0.2.0
+    ### Fallacy of No Return: Tethys System (Lv 70)
+    **10,293 DPS** · 682,649 damage · 1:06 · 100% of its 682,649 HP
+    1. **Hiyuki** · 9,080 DPS · 602,165 (88.2%)
+    2. **Lynae** · 822 DPS · 54,522 (8.0%)
+    3. **Shorekeeper** · 391 DPS · 25,963 (3.8%)
+    -# Measured from the boss HP bar and the boss's HP from the game's data. Split by who was on field. Waveband 0.3.1
 
-Nothing is sent anywhere.
+Discord shows the fight as a small heading, the DPS in bold, the characters as a numbered list
+and the last line as small grey text, on a phone too. Pasted somewhere without markdown, the few
+marks stay and the text still reads. Nothing is sent anywhere.
 
-**One-line meter, hiding, screenshots.** Shift+F8 shrinks the meter to the clock and the damage
+**One-line meter, hiding, screenshots.** Alt+Shift+F8 shrinks the meter to the clock and the damage
 per second; anything it needs to explain is still shown underneath. "Hide the meter between
-fights" takes it off the screen when no fight is on (a finished fight stays up for 20 seconds).
+fights" takes it off the screen when no fight is on (a finished fight stays up for 12 seconds). A fight
+ends when the game says combat is over, or after a few seconds without damage; while the game
+still counts you as in combat (an enemy nearby that you haven't fought off) it stays open, for
+up to two minutes.
 "Hide from screenshots and streams" keeps the meter out of every capture, Win+Shift+S included;
 it is off by default, so if the meter is missing from a screenshot, that switch is on.
 
@@ -90,7 +106,7 @@ depends on what the game reveals about each enemy:
 | shows a bar, but its HP can't be worked out | some open-world and quest placements | Percent of HP per second, and the meter says why |
 | shows neither | most common enemies | Nothing; the meter names the enemy and says why |
 
-F9 switches between damage and percent of HP. Figures per second are written short the way the
+Alt+F9 switches between damage and percent of HP. Figures per second are written short the way the
 game writes big numbers (15.38k); the copied summary keeps every digit. Bar-only bosses are as
 fine as the bar can be read, about 0.1% of the boss's HP, so single hits aren't told apart there.
 
@@ -285,9 +301,9 @@ installed.
 **Updates.** Waveband asks GitHub for the newest release when it starts and once a day (turn it
 off in Settings, The game). The request names Waveband and its version and nothing about you.
 When there's a newer version, the meter says so between fights and the tray menu gets "Install
-update". **Stable** only offers stable versions (0.3.0, then 0.4.0); **Beta**
-also offers the test versions between them (0.3.1, 0.3.2, ...) and still moves on to each stable
-version. Choose
+update". **Stable** only offers stable versions (0.3.0, 0.3.1, ...); **Beta**
+also offers the test version each of them gets first (0.3.1-beta.1 before 0.3.1) and still moves
+on to each stable version. Choose
 under Settings, Game, "Updates to take"; until you do, a beta of Waveband is on Beta and any
 other version on Stable. An installed copy then downloads the installer, checks it, runs it quietly and starts
 again on the new version; the zip copy just tells you where to download it. "Install updates at
@@ -309,7 +325,9 @@ needs a restart and no file has to be opened.
 
 - **Keybinds.** Click a keybind, then press the key you want. Function keys, letters, digits and the
   navigation keys work, alone or with Ctrl, Alt or Shift; a letter or digit needs Ctrl or Alt,
-  because the game uses those itself. A key another action has is refused.
+  because the game uses those itself. A key another action has is refused. A key without Ctrl or
+  Alt is taken, but marked: it won't reach Waveband while the game, run as administrator, is in
+  front, unless Waveband runs as administrator too.
 - **Colours.** A colour of your own for each element.
 - **DPS Meter.** The theme, damage or percent, the size, and the switches the tray menu has.
 - **Rows.** Which figures each character's row shows and in what order (damage per second, total,
@@ -392,13 +410,17 @@ Tools, run with `.venv\Scripts\python tools\<name>.py`:
 | `grade_number_reader.py`, `collect_number_samples.py`, `build_digit_templates.py` | Grade and train the optional damage-number reader |
 | `build_release.py --out <folder>` | Build `Waveband.exe`, the zip, the installer and the signed checksums. See [RELEASING.md](RELEASING.md) |
 | `release_key.py` | The release signing key: make, lock, sign, verify |
+| `sign_release.bat` | Drag a release's `SHA256SUMS.txt` onto it: shows the file, asks for the key's passphrase, signs and checks the signature |
 | `test_exe.py <folder>` | Smoke-test a built `Waveband.exe` |
-| `render_page.py`, `drive_page.py` | Render or script a page of a running meter, to check the look and the controls without the game |
+| `render_page.py`, `drive_page.py` | Render or script a page of a running meter, to check the look and the controls without the game; `settings_walk.js` is the `drive_page.py` script that uses every control of the settings page (against a demo meter with settings of its own) |
 | `screenshots.py` | Take the README's pictures from the demo meter |
+| `memory_steps.py [page]` | Load the meter's parts one after another and say how much memory each adds (commit and working set), ending with the overlay page of a running meter |
+| `key_reach.py [key ...]` | Which hotkeys reach a program that isn't run as administrator while the game is in front: run it from an administrator terminal, click into the game, and it taps each key (F13 alone, with Shift, Ctrl, Alt by default) and says which arrived |
 | `make_logo.py` | Draw the logo, the icons, the installer's pictures and each element theme's mark and wordmark |
 | `make_themes.py` | Write the six element themes from their colours and typefaces |
 | `theme_previews.py` | Pictures of every theme's meter and dashboard, drawn twice as sharp, and a grid of them all, in `assets\themes\` (kept out of git) |
 | `exe_entry.py` | What `Waveband.exe` runs (used by `build_release.py`) |
+| `START HERE.txt` | The testers' one-page guide; `build_release.py` puts it in every release with the version filled in |
 
 ## If something looks wrong
 
@@ -445,7 +467,7 @@ and `JoinSceneNotify] Begin [InstanceId: n]`. Then rebuild and check the boss HP
 | `wwmeter\settings.py`, `ui\settings.js` | The settings page and the one-line settings export |
 | `wwmeter\selfupdate.py`, `signing.py` | Waveband's own updates, and Ed25519 signatures with the release key's public half |
 | `wwmeter\sessions.py`, `summary.py`, `changelog.py` | Session files, the copied summary, What changed |
-| `wwmeter\roster.py`, `hotkeys.py`, `selftest.py`, `dmgnum.py` | Names and elements, keys, the self-test, the optional number reader |
+| `wwmeter\roster.py`, `hotkeys.py`, `elevation.py`, `selftest.py`, `dmgnum.py` | Names and elements, keys and which of them reach Waveband past a game run as administrator, the self-test, the optional number reader |
 | `ui\` | The overlay and dashboard page and its themes; `base.css` holds what every theme shares |
 | `data\` | Characters, hand-written names, digit templates, part shares, the boss HP data, the text recognizer's model (`data\ocr`) |
 | `assets\`, `tools\installer\` | The logo and icons; the Inno Setup installer |

@@ -115,24 +115,29 @@ class KeysTest(unittest.TestCase):
         changed, refused = apply(self.cfg, {"hotkeys": {"copy": "alt + control + c"}})
         self.assertEqual((changed, refused), ({"hotkeys"}, []))
         self.assertEqual(self.cfg.hotkeys["copy"], "Ctrl+Alt+C")
-        self.assertEqual(self.cfg.hotkeys["toggle"], "F8")
+        self.assertEqual(self.cfg.hotkeys["toggle"], "Alt+F8")
         self.assertEqual(set(self.cfg.hotkeys), set(hotkeys.DEFAULTS))
 
     def test_a_key_another_action_has_is_refused_by_name(self):
-        changed, refused = apply(self.cfg, {"hotkeys": {"reset": "f8"}})
+        changed, refused = apply(self.cfg, {"hotkeys": {"reset": "alt+f8"}})
         self.assertEqual(changed, set())
-        self.assertEqual(refused, ['F8 is already the key for "Show or hide the meter".'])
-        self.assertEqual(self.cfg.hotkeys["reset"], "F10")
+        self.assertEqual(refused, ['Alt+F8 is already the key for "Show or hide the meter".'])
+        self.assertEqual(self.cfg.hotkeys["reset"], "Alt+F10")
 
     def test_two_actions_can_trade_keys_in_one_change(self):
-        changed, refused = apply(self.cfg, {"hotkeys": {"toggle": "F10", "reset": "F8"}})
+        changed, refused = apply(self.cfg, {"hotkeys": {"toggle": "Alt+F10", "reset": "Alt+F8"}})
         self.assertEqual((changed, refused), ({"hotkeys"}, []))
-        self.assertEqual((self.cfg.hotkeys["toggle"], self.cfg.hotkeys["reset"]), ("F10", "F8"))
+        self.assertEqual((self.cfg.hotkeys["toggle"], self.cfg.hotkeys["reset"]), ("Alt+F10", "Alt+F8"))
 
     def test_a_freed_key_can_be_given_to_another_action(self):
         apply(self.cfg, {"hotkeys": {"toggle": ""}})
         self.assertEqual(self.cfg.hotkeys["toggle"], "")
-        self.assertEqual(apply(self.cfg, {"hotkeys": {"reset": "F8"}}), ({"hotkeys"}, []))
+        self.assertEqual(apply(self.cfg, {"hotkeys": {"reset": "Alt+F8"}}), ({"hotkeys"}, []))
+
+    def test_a_bare_key_can_still_be_chosen(self):
+        # it reaches a Waveband run as administrator; the page warns when it won't
+        self.assertEqual(apply(self.cfg, {"hotkeys": {"reset": "F10"}}), ({"hotkeys"}, []))
+        self.assertEqual(self.cfg.hotkeys["reset"], "F10")
 
     def test_any_number_of_actions_can_have_no_key(self):
         changed, refused = apply(self.cfg, {"hotkeys": {"toggle": "", "reset": "", "move": ""}})
@@ -144,22 +149,31 @@ class KeysTest(unittest.TestCase):
             self.assertEqual(changed, set(), key)
             self.assertEqual(len(refused), 1, key)
         self.assertEqual(apply(self.cfg, {"hotkeys": "F8"})[0], set())
-        self.assertEqual(self.cfg.hotkeys["reset"], "F10")
+        self.assertEqual(self.cfg.hotkeys["reset"], "Alt+F10")
 
     def test_an_action_this_version_does_not_have_is_passed_over(self):
         self.assertEqual(apply(self.cfg, {"hotkeys": {"dance": "F12"}}), (set(), []))
         self.assertNotIn("dance", self.cfg.hotkeys)
 
     def test_back_to_the_usual_keys(self):
-        apply(self.cfg, {"hotkeys": {"toggle": "F10", "reset": "F8", "copy": "Ctrl+Alt+C"}})
+        apply(self.cfg, {"hotkeys": {"toggle": "Alt+F10", "reset": "Alt+F8", "copy": "Ctrl+Alt+C"}})
         self.assertEqual(apply(self.cfg, {"hotkeys": dict(hotkeys.DEFAULTS)}), ({"hotkeys"}, []))
         self.assertEqual(self.cfg.hotkeys, hotkeys.DEFAULTS)
 
     def test_a_table_from_an_older_version_gets_the_newer_actions(self):
-        self.cfg.hotkeys = {"toggle": "F8", "reset": "F10"}
+        self.cfg.hotkeys = {"toggle": "Alt+F8", "reset": "Alt+F10"}
         apply(self.cfg, {"hotkeys": {"reset": "F12"}})
         self.assertEqual(set(self.cfg.hotkeys), set(hotkeys.DEFAULTS))
-        self.assertEqual(self.cfg.hotkeys["older"], "F7")
+        self.assertEqual(self.cfg.hotkeys["older"], "Alt+F7")
+
+    def test_the_page_marks_keys_that_need_ctrl_or_alt_only_when_they_do(self):
+        apply(self.cfg, {"hotkeys": {"reset": "F10", "copy": "Ctrl+C"}})
+        quiet = settings.describe(self.cfg, ["wuwa"], ["en"])
+        self.assertFalse(quiet["keys_need_ctrl_or_alt"])
+        self.assertFalse(any(item["blocked"] for item in quiet["hotkeys"]))
+        shown = settings.describe(self.cfg, ["wuwa"], ["en"], keys_need_ctrl_or_alt=True)
+        self.assertTrue(shown["keys_need_ctrl_or_alt"])
+        self.assertEqual([item["action"] for item in shown["hotkeys"] if item["blocked"]], ["reset"])
 
 
 class ColoursTest(unittest.TestCase):
@@ -291,12 +305,23 @@ class LineTest(unittest.TestCase):
 
     def test_a_key_the_line_gives_twice_goes_to_the_first_action(self):
         target = Config(log_dir="x")
-        line = line_of({"hotkeys": {"toggle": "F8", "reset": "f8", "move": "Banana", "dance": "F12"}})
+        line = line_of({"hotkeys": {"toggle": "Ctrl+F8", "reset": "ctrl+f8", "move": "Banana", "dance": "F12"},
+                        "hotkeys_revision": hotkeys.REVISION})
         changed, refused = settings.take_line(target, line, THEMES, LANGUAGES)
         self.assertEqual((changed, refused), ({"hotkeys"}, []))
-        self.assertEqual((target.hotkeys["toggle"], target.hotkeys["reset"], target.hotkeys["move"]), ("F8", "", ""))
-        self.assertEqual(target.hotkeys["older"], "F7")  # left out of the line: kept
+        self.assertEqual((target.hotkeys["toggle"], target.hotkeys["reset"], target.hotkeys["move"]), ("Ctrl+F8", "", ""))
+        self.assertEqual(target.hotkeys["older"], "Alt+F7")  # left out of the line: kept
         self.assertNotIn("dance", target.hotkeys)
+
+    def test_a_line_from_030_brings_the_alt_keys_not_the_old_ones(self):
+        target = Config(log_dir="x")
+        line = line_of({"hotkeys": dict(hotkeys.OLD_DEFAULTS, unit="Shift+F9", copy="")})
+        changed, refused = settings.take_line(target, line, THEMES, LANGUAGES)
+        self.assertEqual((changed, refused), ({"hotkeys"}, []))
+        self.assertEqual(target.hotkeys["toggle"], "Alt+F8")
+        self.assertEqual(target.hotkeys["unit"], "Shift+F9")  # chosen on the other PC: kept
+        # and a line made now says which defaults it was written against
+        self.assertEqual(settings.read_line(settings.export(target))["hotkeys_revision"], hotkeys.REVISION)
 
     def test_a_line_broken_on_the_way_is_put_together_again(self):
         line = settings.export(self.changed_config())

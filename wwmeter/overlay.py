@@ -1,7 +1,7 @@
 """The in-game overlay: a transparent, click-through, always-on-top window showing the web UI.
 
 It never takes focus and passes every click to whatever is underneath. "Move mode" (tray menu or
-its hotkey, F11 unless changed) makes it grabbable: drag to move, scroll to resize, then lock it
+its hotkey, Alt+F11 unless changed) makes it grabbable: drag to move, scroll to resize, then lock it
 again.
 """
 
@@ -36,6 +36,8 @@ _MOD_NOREPEAT = 0x4000
 _PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
 _BASE_SIZE = (424, 380)  # UI at zoom 1.0, in pixels
 _HIDE_AFTER = 1.0  # seconds the game must be out of focus before the overlay hides
+# The hint is an element of its own, not ``.meter::after``: the themes draw with that (the wuwa
+# theme's diamond), and the hint was squeezed into it, out of sight.
 _MOVE_STYLE = """
 (() => {
   let s = document.getElementById('move-style');
@@ -43,11 +45,19 @@ _MOVE_STYLE = """
     s = document.createElement('style');
     s.id = 'move-style';
     s.textContent = `body.moving .meter{outline:2px dashed #f2b544;outline-offset:2px;cursor:move}
-      body.moving .meter::after{content:'Drag to move. Scroll to resize. __LOCK__';
-      display:block;padding:6px 12px 8px;font-size:.84rem;color:#f2b544;
-      border-top:1px solid rgba(236,230,216,.12)}`;
+      #move-hint{display:none}
+      body.moving #move-hint{display:block;padding:6px 12px 8px;font-size:.84rem;color:#f2b544;
+      border-top:1px solid rgba(236,230,216,.12);text-transform:none;letter-spacing:normal}`;
     document.head.appendChild(s);
   }
+  const meter = document.querySelector('.meter');
+  let hint = document.getElementById('move-hint');
+  if (meter && !hint) {
+    hint = document.createElement('div');
+    hint.id = 'move-hint';
+    meter.appendChild(hint);
+  }
+  if (hint) hint.textContent = 'Drag to move. Scroll to resize. __LOCK__';
   document.body.classList.toggle('moving', %s);
 })();
 """
@@ -471,7 +481,7 @@ def run(
     rest_action = entry("Hide the meter between fights", "rest", cfg.hide_between_fights)
     move_action = entry("Move or resize the overlay", "move", False)
     capture_action = entry("Hide from screenshots and streams", "capture", cfg.hide_from_capture)
-    hints_action = entry("Show the keys on the meter", "hints", cfg.show_keys)
+    hints_action = entry("Show the keybinds on the meter", "hints", cfg.show_keys)
     theme_menu = menu.addMenu("Theme")
     theme_actions = {}
 

@@ -38,11 +38,24 @@ class ScreenReader:
         self._ocr_failed = False
         self._numbers = None
         self._numbers_failed = False
+        self._height: int | None = None  # the game's full height, for a frame that is a strip
 
-    def process(self, frame: np.ndarray, now: float) -> None:
-        if self._cfg.read_numbers and not self._numbers_failed and self._tracker.wants_numbers(now):
+    def strip(self) -> float | None:
+        """How much of the game's height, from the top, a frame needs: the strip with the boss's
+        name and bar, or (None) the whole frame while damage numbers are read off it."""
+        if self._cfg.read_numbers and not self._numbers_failed:
+            return None
+        return hud.strip_share(self._cfg.boss_bar)
+
+    def process(self, frame: np.ndarray, now: float, height: int | None = None) -> None:
+        """``frame`` may be the top strip only (``strip``); ``height`` is then the game's full
+        height."""
+        whole = height is None or frame.shape[0] >= height
+        if (whole and self._cfg.read_numbers and not self._numbers_failed
+                and self._tracker.wants_numbers(now)):
             self._read_numbers(frame, now)
-        bar = hud.read_boss_bar(frame, self._cfg.boss_bar)
+        self._height = height
+        bar = hud.read_boss_bar(frame, self._cfg.boss_bar, height)
         if bar is None or bar.confidence < _BAR_CONFIDENCE:
             self._tracker.on_boss(now, None)
             return
@@ -80,7 +93,7 @@ class ScreenReader:
                 from .ocr import TextReader
 
                 self._ocr = TextReader()
-            return hud.read_boss_title(frame, self._ocr)
+            return hud.read_boss_title(frame, self._ocr, self._height)
         except Exception:  # noqa: BLE001 - the title is a nicety; never let OCR break the meter
             self._ocr_failed = True
             return ""
@@ -196,11 +209,11 @@ class Engine:
                 tick = time.monotonic()
                 focused = capture.game_focused()
                 if focused and tick - last_grab >= interval:
-                    frame = capture.grab()
+                    frame = capture.grab(reader.strip())
                     if frame is not None:
                         last_grab = tick
                         frames += 1
-                        reader.process(frame, time.time())
+                        reader.process(frame, time.time(), capture.height)
                 if tick - window_start >= 1.0:
                     self._tracker.set_status(
                         game=capture.game_running(),

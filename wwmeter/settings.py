@@ -357,6 +357,9 @@ def take_line(cfg: Config, line, themes: list[str], languages: list[str]) -> tup
             else:
                 seen.add(parsed)
             table[action] = key
+        revision = incoming.get("hotkeys_revision")
+        if not isinstance(revision, int) or revision < hotkeys.REVISION:
+            table = hotkeys.off_old_defaults(table)  # a line from 0.3.0 or before: F8 is Alt+F8 now
         incoming["hotkeys"] = table
     if isinstance(incoming.get("colours"), dict):
         # the line's colours whole: an element it does not colour goes back to the theme's
@@ -366,15 +369,22 @@ def take_line(cfg: Config, line, themes: list[str], languages: list[str]) -> tup
 
 # ---- what the page shows --------------------------------------------------------------------
 
-def describe(cfg: Config, themes: list[str], languages: list[str], game_language: str = "") -> dict:
+def describe(
+    cfg: Config, themes: list[str], languages: list[str], game_language: str = "",
+    keys_need_ctrl_or_alt: bool = False,
+) -> dict:
+    """What the settings page shows. ``keys_need_ctrl_or_alt``: the game runs as administrator
+    and Waveband does not, so a key without Ctrl or Alt won't reach Waveband (``elevation``)."""
     keys = hotkeys.bindings(cfg.hotkeys)
     colours = cfg.colours if isinstance(cfg.colours, dict) else {}
     return {
         "hotkeys": [
             {"action": action, "label": hotkeys.LABELS[action], "key": hotkeys.spell(keys[action]) or "",
-             "default": default}
+             "default": default,
+             "blocked": keys_need_ctrl_or_alt and hotkeys.needs_ctrl_or_alt(keys[action])}
             for action, default in hotkeys.DEFAULTS.items()
         ],
+        "keys_need_ctrl_or_alt": keys_need_ctrl_or_alt,
         "elements": list(ELEMENTS),
         "colours": {e: colours[e] for e in ELEMENTS if _COLOUR.match(str(colours.get(e, "")))},
         "theme": cfg.theme,

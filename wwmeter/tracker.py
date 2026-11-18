@@ -968,6 +968,10 @@ class Tracker:
         enc = self._current
         if enc is None:
             self._fight_over_at = None  # a new fight: the old "combat ended" no longer applies
+            # A new fight is what the meter is for: an earlier fight (or session) left on show
+            # gives way to it. Stepping back while it runs still works; this is only its start.
+            self._view = None
+            self._opened, self._opened_label = None, ""
             enc = self._current = Encounter(
                 id=self._next_id, started=now, last_activity=now, first_on_field=self._on_field
             )

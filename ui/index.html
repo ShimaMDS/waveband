@@ -91,6 +91,9 @@
       <section class="set-page" data-page="keys" data-title="Keybinds">
         <p class="hint">Click a keybind, then press the key you want. Keybinds work only while the
           game is in front. The game itself uses F1 to F6.</p>
+        <p id="set-keys-admin" class="hint" hidden>The game runs as administrator, so while it is in
+          front Windows passes Waveband only keys held with Ctrl or Alt: F8 alone, or Shift+F8, never
+          arrives. Running Waveband as administrator too lifts that.</p>
         <div id="set-keys" class="set-rows"></div>
         <div class="actions">
           <button id="set-keys-usual" type="button" class="button">Reset to the default keybinds</button>
@@ -184,8 +187,8 @@
         <div class="set-rows">
           <label class="set-row"><span class="set-name">Updates to take
               <small class="set-note">Stable tells you about releases only. Beta also tells you about
-                the test versions between releases (0.3.1, 0.3.2, ...) and still moves on to each
-                stable version. A beta of Waveband is on Beta until you pick.</small></span>
+                the test version each release gets first (0.3.1-beta.1 before 0.3.1) and still moves
+                on to each stable version. A beta of Waveband is on Beta until you pick.</small></span>
             <select id="set-update_channel">
               <option value="stable">Stable</option>
               <option value="beta">Beta</option>

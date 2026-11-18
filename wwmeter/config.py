@@ -12,7 +12,8 @@ import threading
 from dataclasses import asdict, dataclass, field
 
 from .hotkeys import DEFAULTS as _HOTKEY_DEFAULTS
-from .hotkeys import with_new_actions
+from .hotkeys import REVISION as _HOTKEYS_REVISION
+from .hotkeys import off_old_defaults, with_new_actions
 
 
 def _root() -> str:
@@ -133,8 +134,11 @@ class Config:
     # through earlier fights), toggle (show or hide), compact (one-line meter), unit (damage or
     # percent), reset (new fight), move (move or resize), capture (show in screenshots), hints
     # (the line of keys on the meter), rest (hide between fights), copy (the fight's summary to
-    # the clipboard). Keys are written like "F8" or "Ctrl+Alt+M"; "" gives an action no hotkey.
+    # the clipboard). Keys are written like "Alt+F8" or "Ctrl+Alt+M"; "" gives an action no hotkey.
     hotkeys: dict[str, str] = field(default_factory=lambda: dict(_HOTKEY_DEFAULTS))
+    # Which defaults the keys above were written against: missing (0) in files from 0.3.0 and
+    # before, whose bare F7 to F11 are moved to the Alt ones once (hotkeys.off_old_defaults).
+    hotkeys_revision: int = _HOTKEYS_REVISION
     # Show the keys and what they do in a line along the top of the meter.
     show_keys: bool = True
     # One-line meter: only the fight clock and the total per second.
@@ -181,6 +185,11 @@ def load() -> Config:
     for key, value in data.items():
         if hasattr(cfg, key):
             setattr(cfg, key, value)
+    revision = data.get("hotkeys_revision")
+    if not isinstance(revision, int) or revision < _HOTKEYS_REVISION:
+        if isinstance(cfg.hotkeys, dict):
+            cfg.hotkeys = off_old_defaults(cfg.hotkeys)
+        cfg.hotkeys_revision = _HOTKEYS_REVISION
     if isinstance(cfg.hotkeys, dict):
         # a file written by an earlier version lacks the actions added since: list them, with
         # their default keys, so the next save shows every key that can be changed

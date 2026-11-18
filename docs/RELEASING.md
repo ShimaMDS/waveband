@@ -46,24 +46,37 @@ Windows shows an "unknown publisher" warning and some antivirus programs flag it
 | Branch | What it holds | Versions | Published as |
 |---|---|---|---|
 | `main` | Day-to-day work toward the next version | that version with `.dev0` (0.3.1.dev0) | nothing |
-| `beta` | The versions between stable ones | 0.3.1, 0.3.2, ... (and 0.4.0-beta.1 if wanted) | GitHub pre-releases |
-| `stable` | What everyone gets | x.y.0 only: 0.3.0, then 0.4.0 | ordinary GitHub releases |
+| `beta` | Each version first, as a test | 0.3.1-beta.1, 0.3.1-beta.2, ... | GitHub pre-releases |
+| `stable` | The same version once its beta holds | 0.3.1, then 0.3.2, ... then 0.4.0 | ordinary GitHub releases |
 
-From 0.3.0 on, only x.y.0 is a stable release: every version in between is a beta (owner,
-2026-11-17), and Waveband treats it as one (`selfupdate.is_beta`). 0.2.0 came before this.
+**Every version goes out twice** (owner, 2026-11-17): as a beta first and then as a stable
+release of the same number. 0.3.1-beta.1 (and beta.2 and so on if it needs fixing), then 0.3.1;
+then 0.3.2-beta.1, 0.3.2; and so on up to 0.4.0-beta.1, 0.4.0. Waveband counts only a
+`-beta.N` version as a beta (`selfupdate.is_beta`): a copy on one follows the Beta channel until
+its user picks a channel, any other copy Stable.
 
-Work happens on `main`. **A beta:** merge `main` into `beta`, set the version (`0.3.1`), head its
-changelog section `## 0.3.1 (beta)`, build and sign from `beta`, tag `v0.3.1` there, and publish
-with `gh release create v0.3.1 --prerelease ...`. A fix that can't wait goes out the same way, as
-the next beta. **The next stable version:** merge `main` into `beta` and `beta` into `stable`,
-set the version to `0.4.0`, give its changelog section the plain heading `## 0.4.0` (gathering
-the notes of the betas before it), and publish an ordinary release from `stable`; then
-fast-forward `beta` to it, merge `stable` back into `main`, and set `main` to the next
-`.dev0` (0.4.1.dev0).
+Work happens on `main`. Do the release steps in separate working copies
+(`git worktree add <folder> beta`), so the folder the meter runs from is never switched.
+
+**A beta (0.3.1-beta.1):** merge `main` into `beta`; set `__version__ = "0.3.1-beta.1"` and head
+the changelog's top section `## 0.3.1 (beta)`; commit "Waveband 0.3.1-beta.1"; build from `beta`
+(steps 2 and 3 above), sign, tag `v0.3.1-beta.1` there, push `beta` and the tag, and publish with
+`gh release create v0.3.1-beta.1 --prerelease --verify-tag ...`. A fix found in it goes on `main`
+and out as `0.3.1-beta.2` the same way.
+
+**The stable release of it (0.3.1):** once a beta has held for a few days, set
+`__version__ = "0.3.1"` on `beta` with the plain heading `## 0.3.1`; commit "Waveband 0.3.1";
+merge `beta` into `stable` (`git merge -X theirs beta` if `stable` has commits of its own, then
+`git diff beta` must be empty); fast-forward `beta` to that commit; build from `stable`, sign, tag
+`v0.3.1`, push `stable`, `beta` and the tag (`stable` is protected: pull requests only, but the
+owner's account may push past that), and publish with `gh release create v0.3.1 --latest
+--verify-tag ...`. Then fast-forward `main` to `stable`, set it to the next `.dev0`
+(`0.3.2.dev0`) with an empty `## 0.3.2 (not released yet)` section (the changelog test allows an
+empty top section only on a `.dev` version), and push `main`.
 
 Installed copies on the Stable channel only see ordinary releases; on Beta (Settings, Game,
-"Updates to take"; a beta build is on Beta until the user picks) they see pre-releases too, and still move on to each stable version.
-GitHub never treats a pre-release as the latest release. The repository's history starts at 0.2.0.
+"Updates to take") they see pre-releases too, and still move on to each stable version. GitHub
+never treats a pre-release as the latest release. The repository's history starts at 0.2.0.
 
 **The release key.** `tools\release_key.py new` made it once (2026-11-16). Its private half is
 `%USERPROFILE%\.waveband\release-signing-key.txt`, outside this folder, and its public half is
@@ -92,8 +105,12 @@ Before publishing a release, every line should hold:
 - Tests pass, and `tools\check_enemy_hp.py` shows no row that differs on the current patch.
 - `README.md`, `docs\HOW-IT-WORKS.md`, this file and `tools\START HERE.txt` say what the build
   does, and the README's pictures are of this version (`tools\screenshots.py`).
-- The version in `wwmeter\__init__.py` has lost its `.dev0`, and the top section of
-  `CHANGELOG.md` is headed with just the version (no date) and reads right to someone who only uses the meter.
+- The version in `wwmeter\__init__.py` has lost its `.dev0` (`0.3.1-beta.1` for a beta, `0.3.1`
+  for its stable release), and the top section of `CHANGELOG.md` is headed `## 0.3.1 (beta)` or
+  `## 0.3.1` (no date) and reads right to someone who only uses the meter.
+- `Waveband.exe` carries version information (Properties, Details); without it, machine-learning
+  antivirus engines flag it (found on VirusTotal, 2026-11-17). Before a stable release, the
+  owner checks the zip, the setup and `Waveband.exe` on VirusTotal.
 - Built with `tools\build_release.py` in a fresh environment; `tools\test_exe.py` passes and the
   overlay picture looks right.
 - The zip holds no `config.json`, logs, recordings or number samples, and no user name or
@@ -101,5 +118,5 @@ Before publishing a release, every line should hold:
 - `SHA256SUMS.txt.sig` checks out (`tools\release_key.py verify <out>\SHA256SUMS.txt`), and the
   release has the setup, the zip, the checksums and the signature, tagged `v<version>`.
 - `REPO` in `wwmeter\selfupdate.py` names the repository the release goes to.
-- Published from the right branch: a beta (`x.y.0-beta.N`) from `beta` as a pre-release, a stable
-  version or a fix to one from `stable` as an ordinary release.
+- Published from the right branch: a beta (`x.y.z-beta.N`) from `beta` as a pre-release, its
+  stable release (`x.y.z`) from `stable` as an ordinary release, marked latest.
