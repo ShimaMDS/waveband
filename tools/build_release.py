@@ -89,9 +89,8 @@ def version_info(version: str) -> str:
     )
 
 
-def build_exe(work: str, qt: bool = True) -> str:
-    """Run PyInstaller; returns the folder holding Waveband.exe and _internal. Without ``qt``
-    the build has no Qt: the overlay is WebView2's alone, with no fallback."""
+def build_exe(work: str) -> str:
+    """Run PyInstaller; returns the folder holding Waveband.exe and _internal."""
     os.makedirs(work, exist_ok=True)
     version_file = os.path.join(work, "version-info.txt")
     with open(version_file, "w", encoding="utf-8") as fh:
@@ -112,7 +111,10 @@ def build_exe(work: str, qt: bool = True) -> str:
         # needs ONNX Runtime alone, with its model in data\ocr
         "--exclude-module", "cv2",
         "--exclude-module", "tkinter",
-        *([] if qt else ["--exclude-module", "PySide6", "--exclude-module", "shiboken6"]),
+        # Qt is only for some tools (requirements-dev.txt), never the meter: kept out even when the
+        # build environment has it (it was 300 MB of the 0.3.1 download)
+        "--exclude-module", "PySide6",
+        "--exclude-module", "shiboken6",
         os.path.join(ROOT, "tools", "exe_entry.py"),
     ]
     subprocess.run(command, check=True)
@@ -123,58 +125,6 @@ def _listed(folder: str, keep=lambda name: False) -> list[str]:
     if not os.path.isdir(folder):
         return []
     return [os.path.join(folder, name) for name in os.listdir(folder) if not keep(name)]
-
-
-def _imports(path: str) -> set[str]:
-    """Lower-case names of the DLLs a program file loads, from its import tables."""
-    import pefile  # comes with PyInstaller
-
-    names: set[str] = set()
-    try:
-        binary = pefile.PE(path, fast_load=True)
-    except pefile.PEFormatError:
-        return names
-    try:
-        binary.parse_data_directories(directories=[
-            pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_IMPORT"],
-            pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT"],
-        ])
-        for table in ("DIRECTORY_ENTRY_IMPORT", "DIRECTORY_ENTRY_DELAY_IMPORT"):
-            for entry in getattr(binary, table, []):
-                names.add(entry.dll.decode("ascii", "replace").lower())
-    finally:
-        binary.close()
-    return names
-
-
-def unused_qt(qt: str) -> list[str]:
-    """Qt's own DLLs in the bundled PySide6 folder that nothing left in it loads.
-
-    The web view's hook brings Qt's whole folder of QML modules, and each of those drags in the
-    library behind it (Qt Quick 3D, Charts, the virtual keyboard, ...). With the QML folder
-    gone, what is still needed is whatever the Python modules, the web view's helper program
-    and the remaining plugins load, and whatever those load in turn.
-    """
-    try:
-        import pefile  # noqa: F401
-    except ImportError:
-        print("pefile is not installed, so unused Qt libraries stay in")
-        return []
-    here = {name.lower(): os.path.join(qt, name) for name in os.listdir(qt) if os.path.isfile(os.path.join(qt, name))}
-
-    def is_qt(name: str) -> bool:
-        return name.startswith("qt6") and name.endswith(".dll")
-
-    waiting = [path for name, path in here.items() if not is_qt(name) and name.endswith((".pyd", ".exe", ".dll"))]
-    for folder, _, files in os.walk(os.path.join(qt, "plugins")):
-        waiting += [os.path.join(folder, name) for name in files if name.lower().endswith(".dll")]
-    needed: set[str] = set()
-    while waiting:
-        for name in _imports(waiting.pop()):
-            if name in here and name not in needed:
-                needed.add(name)
-                waiting.append(here[name])
-    return [path for name, path in here.items() if is_qt(name) and name not in needed]
 
 
 def unzip_base_library(release: str) -> int:
@@ -218,38 +168,13 @@ def archives_inside(release: str) -> list[str]:
 def trim(release: str) -> float:
     """Delete bundled files the meter never loads. Returns the megabytes saved."""
     internal = os.path.join(release, "_internal")
-    qt = os.path.join(internal, "PySide6")
-    doomed = []
-    resources = os.path.join(qt, "resources")
-    # debug copies of the web view's resource packs, and the pack of its developer tools,
-    # which the overlay never opens
-    doomed += _listed(resources, lambda f: not (f.endswith(".debug.pak") or "devtools" in f))
-    # the web view's own menus in 50 languages (the page has no menus), and Qt's translations
-    # of dialogs the meter never shows
-    doomed += _listed(os.path.join(qt, "translations", "qtwebengine_locales"), lambda f: f == "en-US.pak")
-    doomed += _listed(os.path.join(qt, "translations"), lambda f: not f.endswith(".qm"))
     # AVIF pictures are never opened; Pillow goes without when the module is absent
-    doomed += _listed(os.path.join(internal, "PIL"), lambda f: not f.startswith("_avif"))
-    # a software stand-in for OpenGL: the overlay is drawn through Direct3D
-    doomed += _listed(qt, lambda f: f.lower() != "opengl32sw.dll")
-    # the PDF picture format would keep the PDF library in
-    doomed += _listed(os.path.join(qt, "plugins", "imageformats"), lambda f: not f.lower().startswith("qpdf"))
+    doomed = _listed(os.path.join(internal, "PIL"), lambda f: not f.startswith("_avif"))
     saved = 0
     for path in doomed:
         if os.path.isfile(path):
             saved += os.path.getsize(path)
             os.remove(path)
-    # Qt Quick's modules and their debugging plugins: the overlay is a web page in a widget
-    for folder in (os.path.join(qt, "qml"), os.path.join(qt, "plugins", "qmltooling")):
-        if os.path.isdir(folder):
-            saved += sum(os.path.getsize(os.path.join(f, n)) for f, _, ns in os.walk(folder) for n in ns)
-            shutil.rmtree(folder)
-    if os.path.isdir(qt):
-        unused = unused_qt(qt)
-        for path in unused:
-            saved += os.path.getsize(path)
-            os.remove(path)
-        print(f"{len(unused)} Qt libraries nothing loads: " + ", ".join(sorted(os.path.basename(p)[3:-4] for p in unused)))
     return saved / 1e6
 
 
@@ -269,7 +194,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--no-installer", action="store_true", help="the zip alone is enough")
     parser.add_argument("--unsigned", action="store_true", help="a test build: no release key needed")
     parser.add_argument("--sign", action="store_true", help="ask for the release key's passphrase and sign (in a terminal)")
-    parser.add_argument("--no-qt", action="store_true", help="leave Qt out: WebView2 draws the overlay, with no fallback")
     args = parser.parse_args(argv)
     out = os.path.abspath(args.out)
     name = f"{NAME}-{__version__}"
@@ -299,7 +223,7 @@ def main(argv: list[str] | None = None) -> int:
     if not (args.keep_work and os.path.isfile(os.path.join(built, NAME + ".exe"))):
         shutil.rmtree(work, ignore_errors=True)
         os.makedirs(out, exist_ok=True)
-        built = build_exe(work, qt=not args.no_qt)
+        built = build_exe(work)
     shutil.copytree(built, release)
     print(f"trimmed {trim(release):.0f} MB of files the meter never loads")
     print(f"unpacked base_library.zip into a folder: {unzip_base_library(release)} files")

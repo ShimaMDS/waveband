@@ -115,9 +115,7 @@ Python 3.11 or newer. Inside the code, Waveband is still called `wwmeter`.
   and [kagerou](https://github.com/hibiyasleep/kagerou), and [ok-ww](https://github.com/ok-oldking/ok-wuthering-waves)'s
   self-updating installer.
 - **Built with** Python, [Microsoft Edge WebView2](https://developer.microsoft.com/microsoft-edge/webview2/)
-  (the overlay; its loader in `lib/webview2` is BSD-licensed), comtypes,
-  [Qt for Python](https://doc.qt.io/qtforpython-6/) (the overlay up to 0.3.1, kept as a fallback), NumPy,
-  ONNX Runtime, BetterCam, websockets, pywin32 and Pillow; the boss title is read with
+  (the overlay; its loader in `lib/webview2` is BSD-licensed), comtypes, NumPy, ONNX Runtime, BetterCam, websockets, pywin32 and Pillow; the boss title is read with
   [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)'s text recognizer as packaged by
   [RapidOCR](https://github.com/RapidAI/RapidOCR) (Apache-2.0, `data/ocr`); packaged with PyInstaller and
   [Inno Setup](https://jrsoftware.org/isinfo.php).

@@ -3,18 +3,18 @@
 A window with no frame, always on top, never taking focus, passing every click through, that
 shows the web UI with the page's own transparency. "Move mode" (tray menu or its hotkey, Alt+F11
 unless changed) makes it grabbable: drag to move, scroll to resize, then lock it again. The
-tray icon and its menu are Windows' own (pywin32); no Qt is loaded.
+tray icon and its menu are Windows' own (pywin32). Up to 0.3.1 Qt drew all of this.
 
 How it is drawn: WebView2 in *visual hosting*. The window has no redirection surface
 (``WS_EX_NOREDIRECTIONBITMAP``) and gets a DirectComposition visual tree; WebView2 draws into a
 visual in it (``ICoreWebView2CompositionController``) over a transparent default background,
 so every pixel's alpha reaches the screen. Clicks pass through because the window is
 ``WS_EX_LAYERED | WS_EX_TRANSPARENT``; WebView2 in visual hosting gets no mouse input unless the
-host forwards it, and the meter never needs it to. ``tools\\webview2_overlay.py --check``
-measures all of this.
+host forwards it, and the meter never needs it to. ``tools\\webview2_overlay.py`` measures
+all of this.
 
 ``run`` raises ``Unavailable`` when WebView2 can't be used here (no runtime, no loader, or it
-failed to start), before or after showing anything; the caller then uses the Qt overlay.
+failed to start), before or after showing anything; the caller then says so and stops.
 """
 
 from __future__ import annotations
@@ -453,10 +453,7 @@ class OverlayWindow:
     def follow_game(self) -> None:
         """Show only over the game, with a short grace so brief focus changes don't flicker."""
         now = time.monotonic()
-        # Not this window: the tray menu brings it to the front to be closed by a click away, and
-        # it would then count as the game, show over the desktop and take the hotkeys. Moving
-        # it never makes it the foreground window (it takes no focus).
-        in_front = self.moving or game_in_front(self._cfg, 0)
+        in_front = self.moving or game_in_front(self._cfg)
         if self.on_front is not None:
             self.on_front(in_front)
         if in_front or not self._cfg.only_over_game:
@@ -691,12 +688,15 @@ def run(
     on_keys_taken: Callable[[list[str]], None] | None = None,
     list_sessions: Callable[[], list[dict]] | None = None,
     open_session: Callable[[str | None], None] | None = None,
-    update_tables: Callable[[], str] | None = None,  # the Qt menu's; here it is in Settings
     update_finished: Callable[[], str | None] | None = None,
     app_actions: dict | None = None,
 ) -> int:
-    """Show the overlay and block until the user quits from the tray menu; the same as
-    ``overlay.run`` (the Qt one). Raises Unavailable when WebView2 can't be used here."""
+    """Show the overlay and block until the user quits from the tray menu. ``on_view`` steps to
+    the fight before (-1) or after (+1) the one on show, ``on_copy`` puts its summary on the
+    clipboard, ``on_keys_taken`` is told which hotkeys another program is holding,
+    ``list_sessions`` gives the earlier sessions and ``open_session`` puts one on show (None:
+    back to this one); ``update_finished`` gives, once, what the last update of the boss HP
+    tables ended with. Raises Unavailable when WebView2 can't be used here."""
     set_dpi_aware()
     runtime_version()  # no runtime: say so now, before a window or a tray icon exists
     failed: list[str] = []
@@ -780,8 +780,7 @@ def run(
         if window is not None:
             window.close()
         # Closing posts a quit (WM_DESTROY), and a failure posted one before: left in the queue,
-        # it would end the next message loop on this thread at once (the Qt overlay's, run from
-        # source as the fallback)
+        # it would end the next message loop on this thread at once
         leftover = wintypes.MSG()
         while _user32.PeekMessageW(ctypes.byref(leftover), None, WM_QUIT, WM_QUIT, PM_REMOVE):
             pass

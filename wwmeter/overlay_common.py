@@ -1,9 +1,8 @@
-"""What the overlay does that needs no window toolkit: shared by the WebView2 overlay
-(``overlay_webview2``) and the Qt one (``overlay``), and testable without either.
+"""What the overlay (``overlay_webview2``) does that needs no window: testable without one.
 
 - ``HotkeySet``: the system-wide keys, held only while the game is in front.
 - ``Controls``: what each hotkey and tray menu entry does, and the tray menu itself as plain
-  ``Item``s that each overlay draws its own way.
+  ``Item``s (``overlay_webview2.build_menu`` makes them a Windows menu).
 - Where the game is, whether it is in front, whether a place is on a screen.
 """
 
@@ -84,9 +83,12 @@ def process_name(hwnd: int) -> str:
         kernel32.CloseHandle(handle)
 
 
-def game_in_front(cfg: config_mod.Config, own: int) -> bool:
-    """True while the game, the overlay (window ``own``; 0 when the overlay's own window never
-    counts) or a screenshot tool has focus."""
+def game_in_front(cfg: config_mod.Config) -> bool:
+    """True while the game or a screenshot tool has focus.
+
+    Not the overlay's own window: the tray menu brings it to the front to be closed by a click
+    away, and it would then count as the game, show over the desktop and take the hotkeys.
+    Moving it never makes it the foreground window (it takes no focus)."""
     import win32gui
 
     from .capture import find_game_window
@@ -97,7 +99,7 @@ def game_in_front(cfg: config_mod.Config, own: int) -> bool:
     foreground = win32gui.GetForegroundWindow()
     if not foreground:  # nothing in front (focus changing, the lock screen): not the game
         return False
-    if foreground in (game, own):
+    if foreground == game:
         return True
     # Taking a screenshot moves focus to the snipping tool; the overlay has to stay up for that
     # or it would vanish from every screenshot.

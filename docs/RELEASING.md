@@ -18,9 +18,8 @@ to hold before one goes out.
    `build-env\Scripts\python tools\build_release.py --out <a folder outside this one>`.
    It builds `Waveband.exe` with PyInstaller, with version information (product, version,
    description; antivirus engines that score files by machine learning flag an exe without
-   it), deletes about 280 MB the meter never loads (most of it parts of Qt that come along
-   with the web view: Qt Quick's modules, 3D, charts, PDF, and every Qt library that nothing
-   left in the folder loads, found by reading the import tables with `pefile`), unpacks
+   it), leaves Qt out (only some tools use it; up to 0.3.1 it drew the overlay and was 300 MB
+   of the build), checks WebView2's loader against its pinned SHA-256, unpacks
    PyInstaller's `base_library.zip` into a folder of the same name (Nexus Mods rejects an
    upload with an archive inside it; the build stops if any is left), adds
    `ui\`, WebView2's loader and its licence (`lib\webview2\`), the data files (the boss HP tables, names, characters, part shares and the text
@@ -32,8 +31,8 @@ to hold before one goes out.
    file with the release key into `SHA256SUMS.txt.sig`. Without the key it says so and fails
    (`--unsigned` for a test build): installed copies would not install the release.
 3. `.venv\Scripts\python tools\test_exe.py <out>\Waveband-<version>` runs the packaged self-test
-   and a demo with each overlay (WebView2 in the screen's bottom right corner for a few seconds,
-   then quit as the tray menu quits it; Qt parked off-screen), and saves a picture of each.
+   and a demo (the overlay in the screen's bottom right corner for a few seconds, then quit as
+   the tray menu quits it), and saves a picture of the overlay to look at.
 4. Publish a GitHub release tagged `v<version>` with four files: the setup, the zip,
    `SHA256SUMS.txt` and `SHA256SUMS.txt.sig`, at https://github.com/ShimaMDS/waveband. Installed
    copies find it through `REPO` in `wwmeter\selfupdate.py`. Copy the zip into

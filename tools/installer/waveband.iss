@@ -66,7 +66,7 @@ Name: "startup"; Description: "Start Waveband when Windows starts"; Flags: unche
 
 [InstallDelete]
 ; The program's own folders are replaced whole, so files an older version had and this one
-; does not (the release trims Qt differently from build to build) are not left behind.
+; does not (0.3.1's Qt, gone since 0.3.2) are not left behind.
 Type: filesandordirs; Name: "{app}\_internal"
 Type: filesandordirs; Name: "{app}\ui"
 Type: filesandordirs; Name: "{app}\source"

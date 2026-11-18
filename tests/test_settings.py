@@ -234,32 +234,22 @@ class LogFolderTest(unittest.TestCase):
 
 
 class OverlayEngineTest(unittest.TestCase):
-    def test_webview2_or_qt(self):
+    def test_the_engine_setting_is_gone(self):
+        # 0.3.2-beta.1 had "What draws the meter" (WebView2 or Qt); Qt left the source after it
         cfg = Config(log_dir="x")
-        self.assertEqual(cfg.overlay_engine, "webview2")
-        self.assertEqual(apply(cfg, {"overlay_engine": "qt"}), ({"overlay_engine"}, []))
-        self.assertEqual(cfg.overlay_engine, "qt")
-        for bad in ("chromium", "", None, 1):
-            changed, refused = apply(cfg, {"overlay_engine": bad})
-            self.assertEqual((changed, len(refused)), (set(), 1), bad)
-            self.assertTrue(refused[0].startswith("What draws the meter: "), refused)
-        self.assertEqual(cfg.overlay_engine, "qt")
+        self.assertFalse(hasattr(cfg, "overlay_engine"))
+        self.assertEqual(apply(cfg, {"overlay_engine": "qt"}), (set(), []))  # taken as nothing
+        self.assertNotIn("overlay_engine", settings.describe(cfg, THEMES, LANGUAGES, "en"))
 
-    def test_a_copy_without_qt_offers_no_choice(self):
-        cfg = Config(log_dir="x", overlay_engine="qt")
-        with mock.patch.object(settings, "_has_qt", return_value=False):
-            shown = settings.describe(cfg, THEMES, LANGUAGES, "en")
-        self.assertFalse(shown["qt_available"])
-        self.assertEqual(shown["overlay_engine"], "webview2")  # what will draw it
-        with mock.patch.object(settings, "_has_qt", return_value=True):
-            shown = settings.describe(cfg, THEMES, LANGUAGES, "en")
-        self.assertEqual((shown["qt_available"], shown["overlay_engine"]), (True, "qt"))
-
-    def test_it_stays_on_this_pc(self):
-        source = Config(log_dir="x", overlay_engine="qt")
-        target = Config(log_dir="y")
-        settings.take_line(target, settings.export(source), THEMES, LANGUAGES)
-        self.assertEqual(target.overlay_engine, "webview2")
+    def test_a_settings_file_that_has_it_still_loads(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = os.path.join(folder, "config.json")
+            with open(path, "w", encoding="utf-8") as fh:
+                json.dump({"overlay_engine": "qt", "theme": "classic"}, fh)
+            with mock.patch.object(config_mod, "CONFIG_PATH", path):
+                cfg = config_mod.load()
+        self.assertEqual(cfg.theme, "classic")
+        self.assertFalse(hasattr(cfg, "overlay_engine"))
 
 
 class LineTest(unittest.TestCase):

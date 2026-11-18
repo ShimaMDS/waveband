@@ -1,7 +1,7 @@
 """The settings as the settings page sees them: what it shows, the checks on what it sends back,
 and all of them as one line of text to carry to another PC.
 
-Nothing here touches Qt or the running meter. ``apply`` changes a Config and says which fields
+Nothing here touches a window or the running meter. ``apply`` changes a Config and says which fields
 changed; whoever called it saves the file and makes the running meter take them up.
 """
 
@@ -44,8 +44,7 @@ USUAL_FIGURES = ("dps", "share")
 # What the one line of text leaves out: where things are on this PC. The log folder's path can
 # hold the Windows user name, and the port is how this PC's browser reaches the meter. The
 # version last run is no setting: it is this PC's own record of which notes it has been shown.
-# What draws the overlay is chosen for this PC's WebView2, which another PC's may not share.
-NOT_EXPORTED = ("log_dir", "port", "seen_version", "overlay_engine")
+NOT_EXPORTED = ("log_dir", "port", "seen_version")
 _LINE_PREFIX = "wwmeter1:"
 _LINE_LIMIT = 40_000  # characters of a pasted line; a real one is under a thousand
 _JSON_LIMIT = 200_000  # bytes it may unpack to
@@ -218,14 +217,6 @@ def _colours(value, current: dict) -> dict[str, str]:
     return merged
 
 
-def _has_qt() -> bool:
-    """Whether this copy of Waveband has Qt to draw the meter with (a release built with
-    ``--no-qt`` has not)."""
-    import importlib.util
-
-    return importlib.util.find_spec("PySide6") is not None
-
-
 def _checks(themes: list[str], languages: list[str]) -> dict:
     return {
         "capture_backend": _one_of("auto", "duplication", "printwindow"),
@@ -235,7 +226,6 @@ def _checks(themes: list[str], languages: list[str]) -> dict:
         "overlay_zoom": lambda value: round(_number(*ZOOM)(value), 2),
         "only_over_game": _flag,
         "hide_from_capture": _flag,
-        "overlay_engine": _one_of("webview2", "qt"),
         "capture_tools": _capture_tools,
         "display_unit": _one_of("damage", "percent"),
         "theme": _one_of(*themes),
@@ -263,7 +253,6 @@ NAMES = {  # a setting, as a message about it calls it
     "overlay_zoom": "The meter's size",
     "only_over_game": "Showing only over the game",
     "hide_from_capture": "Hiding from screenshots",
-    "overlay_engine": "What draws the meter",
     "capture_tools": "The list of screenshot programs",
     "display_unit": "Damage or percent",
     "theme": "The theme",
@@ -405,9 +394,6 @@ def describe(
         "show_keys": bool(cfg.show_keys),
         "hide_between_fights": bool(cfg.hide_between_fights),
         "hide_from_capture": bool(cfg.hide_from_capture),
-        "overlay_engine": cfg.overlay_engine if cfg.overlay_engine in ("webview2", "qt") and _has_qt() else "webview2",
-        # a build without Qt has nothing to choose between: the page leaves the choice out
-        "qt_available": _has_qt(),
         "only_over_game": bool(cfg.only_over_game),
         "check_updates": bool(cfg.check_updates),
         "auto_update": bool(cfg.auto_update),

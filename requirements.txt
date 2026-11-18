@@ -3,6 +3,5 @@ pywin32
 comtypes
 websockets>=13
 bettercam
-PySide6
 onnxruntime
 Pillow
