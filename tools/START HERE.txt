@@ -61,11 +61,12 @@ on measuring. Sessions are kept as files in the "sessions" folder; to read
 one again, pick it under "Earlier sessions" in the tray icon's menu, or in
 the list on the left of the dashboard's Fights page.
 
-The tray icon has the same actions, a Theme picker, a switch to hide the
-meter between fights, a switch to hide it from screenshots and streams,
-"Copy this fight's summary" (text for pasting into a chat), "Settings"
-(keybinds, colours, and which figures each character's row shows), "What changed"
-(what is new in this version), and a fuller dashboard in your browser.
+The tray icon's menu has "Copy this fight's summary" (text for pasting into
+a chat), Earlier sessions, a switch to hide the meter between fights, a
+switch to hide it from screenshots and streams, the line of keys, a Theme
+picker, a fuller dashboard in your browser (with "What changed": what is new
+in this version), "Settings" (keybinds, colours, and which figures each
+character's row shows) and Waveband's updates.
 
 If the meter says a key "is in use by another program", that program got
 the key first and it does nothing in the meter: give the action another key
@@ -97,8 +98,8 @@ WHAT IT CAN AND CANNOT MEASURE
   and ultrawide screens are what this test build still needs to find out
   about.
 - After a game update, bosses may show percent instead of damage until the
-  boss HP data is refreshed. The meter says so: pick "Update boss HP tables"
-  in the tray icon's menu. It downloads about 260 MB of the game's data from
+  boss HP data is refreshed. The meter says so: in Settings, The game, press
+  "Update boss HP tables". It downloads about 260 MB of the game's data from
   a community copy on GitHub, builds the meter's tables (about a minute) and
   deletes the download again. If it says the new version is not published
   yet, try again a day or two later.

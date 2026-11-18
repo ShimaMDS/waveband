@@ -147,16 +147,34 @@ class ControlsTest(unittest.TestCase):
         self.assertEqual(len(self.said), 1)
 
     def test_menu_shows_keys_and_ticks(self):
-        self.cfg.display_unit = "percent"
+        self.cfg.hide_between_fights = True
+        self.cfg.hotkeys = dict(self.cfg.hotkeys, rest="Ctrl+Alt+H")
         items = self.controls.items()
-        unit = self.find(items, "Show percent of HP instead of damage")
-        self.assertTrue(unit.checked)
-        self.assertEqual(unit.key, hotkeys.bindings(self.cfg.hotkeys)["unit"])
-        self.assertFalse(self.find(items, "Move or resize the overlay").checked)
+        rest = self.find(items, "Hide the meter between fights")
+        self.assertTrue(rest.checked)
+        self.assertEqual(rest.key, "Ctrl+Alt+H")
         self.assertEqual(items[-1].text, "Quit")
         self.assertTrue(items[-2].separator)
-        unit.action()
-        self.assertEqual(self.cfg.display_unit, "damage")
+        rest.action()
+        self.assertFalse(self.cfg.hide_between_fights)
+
+    def test_the_short_menu(self):
+        # owner, 2026-11-18: what has a key or a place in the dashboard stays out
+        texts = [item.text for item in self.controls.items() if not item.separator]
+        self.assertEqual(texts, [
+            "Copy this fight's summary", "Earlier sessions", "Hide the meter between fights",
+            "Hide from screenshots and streams", "Show the keybinds on the meter", "Theme",
+            "Open the dashboard in a browser", "Settings: keybinds, colours, log folder", "Quit",
+        ])
+
+    def test_moving_is_listed_when_it_has_no_key_or_to_lock(self):
+        listed = lambda: any(i.text == "Move or resize the overlay" for i in self.controls.items())  # noqa: E731
+        self.assertFalse(listed())
+        self.overlay.moving = True
+        self.assertTrue(listed())  # to lock it again
+        self.overlay.moving = False
+        self.cfg.hotkeys = dict(self.cfg.hotkeys, move="")
+        self.assertTrue(listed())
 
     def test_submenus_are_made_when_opened(self):
         items = self.controls.items()

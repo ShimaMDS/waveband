@@ -630,7 +630,7 @@ def run(
     on_keys_taken: Callable[[list[str]], None] | None = None,
     list_sessions: Callable[[], list[dict]] | None = None,
     open_session: Callable[[str | None], None] | None = None,
-    update_tables: Callable[[], str] | None = None,
+    update_tables: Callable[[], str] | None = None,  # the Qt menu's; here it is in Settings
     update_finished: Callable[[], str | None] | None = None,
     app_actions: dict | None = None,
 ) -> int:
@@ -657,7 +657,7 @@ def run(
         controls = Controls(
             cfg=cfg, overlay=window, notify=tray.notify, quit=quit_app, on_reset=on_reset,
             dashboard_url=dashboard_url, on_view=on_view, on_copy=on_copy, list_sessions=list_sessions,
-            open_session=open_session, update_tables=update_tables, update_finished=update_finished,
+            open_session=open_session, update_finished=update_finished,
             app_actions=app_actions, themes=available_themes, theme_label=theme_label,
         )
         if app_actions is not None:

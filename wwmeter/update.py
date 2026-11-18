@@ -22,7 +22,7 @@ An update fetches the text of English, of the language the game is set to and of
 settings name. The other languages keep the names the file already had for them (an enemy new
 with the patch shows in English there). ``--languages all`` fetches every language.
 
-    Waveband.exe update                 # or the tray menu's "Update boss HP tables"
+    Waveband.exe update                 # or Settings, The game, "Update boss HP tables"
     python -m wwmeter update --languages all --keep-downloads
 
 A meter that is running does this as a program of its own (``Updater``), so the tables being

@@ -7,7 +7,11 @@
   clicks pass through it, hidden from screenshots if you choose, Alt+F11 to move and resize it.
   If WebView2 is missing or won't start, Waveband uses the old overlay by itself. To go back to
   it by hand: Settings, DPS Meter, "What draws the meter", then start Waveband again.
-- The tray icon's menu is Windows' own menu now, with the keybinds beside each entry as before.
+- **A shorter tray menu**, in Windows' own style: copying the fight's summary, earlier sessions,
+  hiding between fights and from screenshots, the line of keys, the theme, the dashboard,
+  Settings and Waveband's updates. The rest has a keybind (showing or hiding the meter, damage
+  or percent, a new fight, the fight before or after, the one-line meter, moving it) or is in
+  the dashboard: What changed, and "Update boss HP tables" under Settings, The game.
 
 ## 0.3.1
 

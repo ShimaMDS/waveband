@@ -61,12 +61,15 @@ wants anyway.
 
 The keys without Shift are listed along the top of the meter ("Show the keybinds on the meter" turns that
 off). Three more actions have no key until you give them one: hiding between fights, copying a
-fight's summary, and the line of keys. All of them are also in the tray menu. If another program
+fight's summary, and the line of keys; those three are also in the tray menu. If another program
 already holds one of these keys, Windows won't give it to Waveband; the meter says so ("Alt+F9 is
 in use by another program"), and you can pick another key in Settings.
 
-**The tray menu** has every action, a theme picker, and opens the dashboard in your browser. The
-dashboard has three pages: Fights, Settings and What changed.
+**The tray menu** is kept short: copying the fight's summary, earlier sessions, hiding between
+fights and from screenshots, the line of keys, the theme, the dashboard and Settings in your
+browser, and Waveband's updates. Everything else has a key or is in the dashboard; moving the
+meter is in the menu too while it has no key. The dashboard has three pages: Fights, Settings
+and What changed.
 
 **Sessions and earlier fights.** Each start of Waveband is a session. Finished fights are saved
 as they end, one file per session in the `sessions` folder (`sessions\2026-11-15_16-30-05.json`),
@@ -281,7 +284,7 @@ same share of the raised HP is assumed).
 `data\enemy_hp.json` is built for one game version. When the installed game is a newer version
 than the data, the meter says so between fights.
 
-"Update boss HP tables" in the tray menu (also in Settings, The game, and `Waveband.exe update`)
+"Update boss HP tables" in Settings, The game (or `Waveband.exe update`)
 reads the installed version and fetches that version's data from
 [Arikatsu/WutheringWaves_Data](https://github.com/Arikatsu/WutheringWaves_Data), a community copy
 of the game client's data tables published per version: about 205 MB of tables plus the text of

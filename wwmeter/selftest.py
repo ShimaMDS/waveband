@@ -38,7 +38,7 @@ def _checks(cfg: config.Config):
             if tables.language else "no enemy names in the tables: read off the screen instead"
         )
         game = installed_version(cfg.log_dir) or "not found"
-        behind = " (out of date: tray menu, Update boss HP tables)" if out_of_date(game, tables.version) else ""
+        behind = " (out of date: Settings, The game, Update boss HP tables)" if out_of_date(game, tables.version) else ""
         return (
             f"themes {themes}; {known} characters; boss HP tables for game {tables.version}, "
             f"built {tables.built or '?'} (installed game: {game}){behind}; {names}"

@@ -38,7 +38,7 @@ OLD_DEFAULTS = {
 # Settings written before the defaults gained Alt have no "hotkeys_revision"; see off_old_defaults.
 REVISION = 1
 # What each key is called in the line of keys along the top of the meter. The line has room for
-# about five, so the two Shift keys are left to the tray menu, which lists every key.
+# about five, so the two Shift keys are left out; the settings page lists every key.
 _HINT_LABELS = {
     "older": "earlier", "toggle": "hide", "unit": "dmg / %", "reset": "new fight", "move": "move",
     "capture": "screenshots", "hints": "keys", "rest": "auto-hide", "copy": "copy",

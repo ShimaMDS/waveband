@@ -175,7 +175,7 @@ def run(cfg: Config, demo: bool = False, overlay: bool = True) -> int:
     versions = changelog.read()
     ran_before = changelog.last_run(cfg.seen_version, had_settings)
     fresh = [v["version"] for v in changelog.news(versions, ran_before, __version__)]
-    news = {"line": f"Updated to {__version__}. What changed: see the tray menu."
+    news = {"line": f"Updated to {__version__}. What changed: the dashboard (tray menu) has it."
             if fresh else ""}
     if cfg.seen_version != __version__:
         cfg.seen_version = __version__
@@ -312,7 +312,7 @@ def run(cfg: Config, demo: bool = False, overlay: bool = True) -> int:
         stale = ""
         if game_data["stale"] and not live and not game_data["running"]:
             stale = (f"The game is {update.branch_of(game_data['game'])} and the boss HP tables "
-                     f"are for {update.branch_of(game_data['version'])}. Tray menu: Update boss HP tables.")
+                     f"are for {update.branch_of(game_data['version'])}. Settings, The game: Update boss HP tables.")
         state["ui"] = {
             "version": __version__,
             # the line that says the meter was updated; empty on every start but the first

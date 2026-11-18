@@ -50,19 +50,20 @@ class BuildMenuTest(unittest.TestCase):
             cfg=cfg, overlay=FakeOverlay(), notify=lambda *_: None, quit=lambda: None,
             on_reset=lambda: None, dashboard_url="http://127.0.0.1:5055/?view=full",
             list_sessions=lambda: [{"file": "a.json", "label": "Monday", "fights": 2, "last": "Crownless"}],
-            open_session=lambda chosen: None, update_tables=lambda: "", themes=lambda: ["wuwa", "classic"],
+            open_session=lambda chosen: None, themes=lambda: ["wuwa", "classic"],
             theme_label=str.title,
-            app_actions={"available": lambda: "", "install": lambda: "", "check": lambda: "", "said": lambda: None},
+            app_actions={"available": lambda: "0.3.2", "install": lambda: "", "check": lambda: "", "said": lambda: None},
         )
+        cfg.hotkeys = dict(cfg.hotkeys, copy="Ctrl+Alt+C")
         items = controls.items()
         menu, actions = build_menu(items)
         try:
             shown = texts(menu)
             self.assertEqual(len(shown), len(items))
             self.assertIn("Settings: keybinds, colours, log folder", shown)
+            self.assertIn("Install update (0.3.2)", shown)
+            self.assertIn("Copy this fight's summary\tCtrl+Alt+C", shown)  # its key beside it
             self.assertIn("Quit", shown)
-            unit = shown.index(next(t for t in shown if t.startswith("Show percent of HP")))
-            self.assertTrue(unit is not None and "\t" in shown[unit])  # its key beside it
             sessions = win32gui.GetSubMenu(menu, shown.index("Earlier sessions"))
             self.assertEqual(win32gui.GetMenuItemCount(sessions), 3)  # back, a separator, Monday
             themes = win32gui.GetSubMenu(menu, shown.index("Theme"))

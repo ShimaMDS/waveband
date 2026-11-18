@@ -235,7 +235,6 @@ class Controls:
     on_copy: Callable[[], None] | None = None
     list_sessions: Callable[[], list[dict]] | None = None
     open_session: Callable[[str | None], None] | None = None
-    update_tables: Callable[[], str] | None = None
     update_finished: Callable[[], str | None] | None = None
     app_actions: dict | None = None
     themes: Callable[[], list[str]] = field(default=lambda: [])
@@ -288,9 +287,6 @@ class Controls:
         text = actions["install"]() if actions["available"]() else actions["check"]()
         self.notify(text, 6000)
 
-    def start_tables_update(self) -> None:
-        self.notify(self.update_tables(), 6000)
-
     def poll(self) -> None:
         """Run every half second: say what an update of the tables or of Waveband ended with."""
         ended = self.update_finished() if self.update_finished is not None else None
@@ -302,30 +298,32 @@ class Controls:
                 self.notify(said, 8000)
 
     def items(self) -> list[Item]:
-        """The tray menu as it is now: ticks and keys as set this moment."""
+        """The tray menu as it is now: ticks and keys as set this moment.
+
+        Kept short (owner, 2026-11-18). What it leaves out has a hotkey (showing or hiding the
+        meter, damage or percent, a new fight, the fight before or after, the one-line meter,
+        moving it) or a place in the dashboard (What changed; Settings, The game, Update boss
+        HP tables). Moving is listed when it has no key, or to lock it again: without a key it
+        could not be reached at all.
+        """
         cfg = self.cfg
         keys = hotkey_names.bindings(cfg.hotkeys)
 
         def entry(text: str, action: str, checked: bool | None = None) -> Item:
             return Item(text, lambda: self.dispatch(action), keys.get(action, ""), checked)
 
-        menu = [
-            entry("Show or hide the overlay", "toggle"),
-            entry("Show percent of HP instead of damage", "unit", cfg.display_unit == "percent"),
-            entry("Start a new fight", "reset"),
-            entry("Show the fight before this one", "older"),
-            entry("Show the fight after this one", "newer"),
-            entry("Copy this fight's summary", "copy"),
-        ]
+        menu = [entry("Copy this fight's summary", "copy")]
         if self.list_sessions is not None and self.open_session is not None:
             menu.append(Item("Earlier sessions", children=self._sessions))
         menu += [
             Item(),
-            entry("One-line meter", "compact", bool(cfg.compact)),
             entry("Hide the meter between fights", "rest", bool(cfg.hide_between_fights)),
-            entry("Move or resize the overlay", "move", bool(self.overlay.moving)),
             entry("Hide from screenshots and streams", "capture", bool(cfg.hide_from_capture)),
             entry("Show the keybinds on the meter", "hints", bool(cfg.show_keys)),
+        ]
+        if self.overlay.moving or not keys.get("move"):
+            menu.append(entry("Move or resize the overlay", "move", bool(self.overlay.moving)))
+        menu += [
             Item("Theme", children=lambda: [
                 Item(self.theme_label(name), lambda chosen=name: self.pick_theme(chosen),
                      checked=name == cfg.theme, radio=True)
@@ -335,10 +333,7 @@ class Controls:
             Item("Open the dashboard in a browser", lambda: webbrowser.open(self.dashboard_url)),
             Item("Settings: keybinds, colours, log folder",
                  lambda: webbrowser.open(self.dashboard_url + "#settings")),
-            Item("What changed", lambda: webbrowser.open(self.dashboard_url + "#changes")),
         ]
-        if self.update_tables is not None:
-            menu.append(Item("Update boss HP tables (after a game patch)", self.start_tables_update))
         if self.app_actions is not None:
             newest = self.app_actions["available"]()
             menu.append(Item(f"Install update ({newest})" if newest else "Check for Waveband updates",
