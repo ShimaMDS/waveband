@@ -233,6 +233,24 @@ class LogFolderTest(unittest.TestCase):
             self.assertEqual(cfg.log_dir, logs)
 
 
+class FrameRateTest(unittest.TestCase):
+    def test_60_or_120(self):
+        cfg = Config(log_dir="x")
+        self.assertEqual(cfg.overlay_fps, 60)
+        self.assertEqual(apply(cfg, {"overlay_fps": 120}), ({"overlay_fps"}, []))
+        self.assertEqual(settings.describe(cfg, THEMES, LANGUAGES, "en")["overlay_fps"], 120)
+        for bad in (30, 144, "120", True, None):
+            changed, refused = apply(cfg, {"overlay_fps": bad})
+            self.assertEqual((changed, len(refused)), (set(), 1), bad)
+            self.assertTrue(refused[0].startswith("The meter's frame rate: "), refused)
+        self.assertEqual(cfg.overlay_fps, 120)
+
+    def test_it_travels_in_the_settings_line(self):
+        source, target = Config(log_dir="x", overlay_fps=120), Config(log_dir="y")
+        settings.take_line(target, settings.export(source), THEMES, LANGUAGES)
+        self.assertEqual(target.overlay_fps, 120)
+
+
 class OverlayEngineTest(unittest.TestCase):
     def test_the_engine_setting_is_gone(self):
         # 0.3.2-beta.1 had "What draws the meter" (WebView2 or Qt); Qt left the source after it

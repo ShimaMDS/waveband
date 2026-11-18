@@ -206,9 +206,12 @@ body {
 .channel .level i {
   display: block;
   height: 100%;
-  width: 0;
+  /* full width, scaled down to its share by app.js at the meter's frame rate: a scale is
+     put on screen by the GPU alone, a width lays the page out again */
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: left center;
   background: var(--hue);
-  transition: width 0.35s ease-out;
 }
 
 .channel .rate,
@@ -266,9 +269,9 @@ body {
 
 .boss-fill {
   height: 100%;
-  width: 100%;
+  width: 100%; /* scaled down to the HP left by app.js, as the bars above */
+  transform-origin: left center;
   background: var(--bone);
-  transition: width 0.3s linear;
 }
 
 /* ---- status ---------------------------------------------------------------------------- */
@@ -351,7 +354,5 @@ body.wide .meter { box-shadow: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .channel .level i,
-  .boss-fill { transition: none; }
   .meter[data-state="live"] .clock::before { animation: none; }
 }

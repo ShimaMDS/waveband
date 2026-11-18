@@ -8,6 +8,10 @@
   clicks pass through it, hidden from screenshots if you choose, Alt+F11 to move and resize it.
   The download is about 57 MB instead of 181. If the meter doesn't show, *Waveband self-test*
   says why in its "overlay window" line.
+- **The meter is far lighter on the CPU during a fight**: its bars and figure now move at 60
+  frames a second instead of your monitor's refresh rate, and the bars no longer make the page
+  redraw itself. In our test fight the meter went from about half a CPU core to a fifth. For a
+  smoother look, Settings, DPS Meter, "Smoother meter: 120 frames a second".
 - **A shorter tray menu**, in Windows' own style: copying the fight's summary, earlier sessions,
   hiding between fights and from screenshots, the line of keys, the theme, the dashboard,
   Settings and Waveband's updates. The rest has a keybind (showing or hiding the meter, damage

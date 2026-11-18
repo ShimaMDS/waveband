@@ -339,6 +339,8 @@ def run(cfg: Config, demo: bool = False, overlay: bool = True) -> int:
             "keys": hotkeys.hints(cfg.hotkeys) if cfg.show_keys else [],
             "compact": cfg.compact,
             "hide_between_fights": cfg.hide_between_fights,
+            # frames a second the bars and the figure move at
+            "fps": cfg.overlay_fps if cfg.overlay_fps in (60, 120) else 60,
             # what a character's row shows, and how finely
             "figures": settings.row_figures(cfg.row_figures),
             "decimals": [settings.decimals(cfg.figure_decimals, 2), settings.decimals(cfg.share_decimals, 0)],

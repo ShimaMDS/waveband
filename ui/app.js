@@ -92,41 +92,113 @@ function setText(node, text) {
   if (node.textContent !== text) node.textContent = text;
 }
 
-// ---- headline figure: eased so it does not flicker between pushes ---------------------------
+// ---- motion: the bars and the headline figure, at the meter's own frame rate ----------------
 
+// Between the pushes (four a second) the bars slide and the headline figure counts, drawn at 60
+// frames a second, or 120 if chosen in Settings (the server sends ``ui.fps``). Left to the browser
+// (CSS transitions, a step every frame) they ran at the monitor's rate, 144 Hz and up, and each
+// frame was a new picture of the page to make: about half a CPU core through a fight. When
+// nothing moves, nothing is drawn.
+let frameMs = 1000 / 60;
+const slides = new Map(); // bar -> {from, to, start, ms, linear}
+const scales = new WeakMap(); // bar -> the share of its length it shows
+let ticking = false;
+let lastTick = 0;
+
+function setFrameRate(fps) {
+  if (fps === 60 || fps === 120) frameMs = 1000 / fps;
+}
+
+function valueAt(slide, now) {
+  const k = Math.min(1, (now - slide.start) / slide.ms);
+  const eased = slide.linear ? k : 1 - (1 - k) ** 3; // ease-out, as the transition was
+  return slide.from + (slide.to - slide.from) * eased;
+}
+
+function paintScale(bar, value) {
+  scales.set(bar, value);
+  bar.style.transform = `scaleX(${value.toFixed(4)})`;
+}
+
+// A bar is a full-width element scaled down to its share (the themes start a row's at 0): a
+// scale is put on screen by the GPU alone, a width would lay the page out again.
+function slideBar(bar, to, ms, linear = false) {
+  to = Math.max(0, Math.min(1, to));
+  const now = performance.now();
+  const sliding = slides.get(bar);
+  const from = sliding ? valueAt(sliding, now) : scales.get(bar) ?? (bar === el.bossFill ? 1 : 0);
+  if (Math.abs(to - from) < 0.0005) {
+    if (sliding) {
+      slides.delete(bar);
+      paintScale(bar, to);
+    }
+    return;
+  }
+  if (reducedMotion) {
+    paintScale(bar, to);
+    return;
+  }
+  slides.set(bar, { from, to, start: now, ms, linear });
+  wake();
+}
+
+// The headline figure closes 22% of the gap every 1/60 s, as it has since it was first eased:
+// timed, not counted in frames, so 120 frames are smoother and no faster.
+const DPS_TAU_MS = 1000 / 60 / -Math.log(1 - 0.22);
 let shownDps = 0;
 let targetDps = 0;
 let dpsUnit = "damage";
 let dpsSubject = "";
-let easing = false;
 
-function easeDps() {
-  const gap = targetDps - shownDps;
-  const settle = dpsUnit === "percent" ? 0.005 : 1;
-  if (reducedMotion || Math.abs(gap) < settle) {
-    shownDps = targetDps;
-    easing = false;
-  } else {
-    shownDps += gap * 0.22;
-    requestAnimationFrame(easeDps);
-  }
+function showDps() {
   setText(el.dps, dpsUnit === "percent" ? shownDps.toFixed(2) : short(shownDps));
+}
+
+function stepDps(elapsed) {
+  const gap = targetDps - shownDps;
+  if (Math.abs(gap) < (dpsUnit === "percent" ? 0.005 : 1)) {
+    if (shownDps !== targetDps) {
+      shownDps = targetDps;
+      showDps();
+    }
+    return false;
+  }
+  shownDps += gap * (1 - Math.exp(-elapsed / DPS_TAU_MS));
+  showDps();
+  return true;
+}
+
+function tick() {
+  const now = performance.now();
+  const counting = stepDps(now - lastTick);
+  lastTick = now;
+  for (const [bar, slide] of slides) {
+    paintScale(bar, valueAt(slide, now));
+    if (now - slide.start >= slide.ms) slides.delete(bar);
+  }
+  if (counting || slides.size) setTimeout(tick, frameMs);
+  else ticking = false;
+}
+
+function wake() {
+  if (ticking) return;
+  ticking = true;
+  lastTick = performance.now();
+  setTimeout(tick, frameMs);
 }
 
 // ``subject`` names what the figure is about (a fight, an earlier fight on show, no fight). Only
 // changes within one subject are eased; on a new one the figure jumps, or going back from an
 // earlier fight would count down through made-up values under "No fight yet".
 function setDps(value, unit = "damage", subject = "") {
-  if (unit !== dpsUnit || subject !== dpsSubject) {
+  if (unit !== dpsUnit || subject !== dpsSubject || reducedMotion) {
     dpsUnit = unit;
     dpsSubject = subject;
     shownDps = value;
+    showDps();
   }
   targetDps = value;
-  if (!easing) {
-    easing = true;
-    requestAnimationFrame(easeDps);
-  }
+  if (shownDps !== targetDps) wake();
 }
 
 // ---- tape: damage per second, mirrored like an audio clip -----------------------------------
@@ -329,7 +401,7 @@ function renderChannels(players, unit) {
     const cls = "channel " + hues.get(p.key) + (p.on_field ? " on-field" : "");
     if (row.className !== cls) row.className = cls;
     setText(row.children[1], p.name);
-    row.children[2].firstChild.style.width = (100 * p.damage / top).toFixed(1) + "%";
+    slideBar(row.children[2].firstChild, p.damage / top, 350);
     rowFigures.forEach((name, n) => setText(row.children[3 + n], FIGURES[name].text(p, unit)));
   });
 }
@@ -584,6 +656,7 @@ function render(state) {
   const oneLine = !wide && Boolean(ui.compact);
   const enc = inUnit(state.encounter, ui.unit);
   if (state.ui) setTheme(ui.theme);
+  if (state.ui) setFrameRate(ui.fps);
   if (state.ui) setColours(ui.colours);
   if (state.ui) setFigures(ui);
   for (const watch of stateWatchers) watch(state);
@@ -640,19 +713,19 @@ function render(state) {
         setText(el.bossHp, left ? `Target HP ${left}` : enc.live ? "Target HP" : "Target defeated");
         setText(el.bossRate, "");
         setText(el.bossEta, "");
-        el.bossFill.style.width = "0%";
+        slideBar(el.bossFill, 0, 300, true);
       } else if (boss.hp <= 0) {
         // Dead. Nothing more is said: the rate the bar was falling at used to follow here with
         // a minus sign in front, and next to "0.0%" that read as HP below zero.
         setText(el.bossHp, "Target defeated");
         setText(el.bossRate, "");
         setText(el.bossEta, "");
-        el.bossFill.style.width = "0%";
+        slideBar(el.bossFill, 0, 300, true);
       } else {
         setText(el.bossHp, `Target HP ${(boss.hp * 100).toFixed(1)}%`);
         setText(el.bossRate, left || (boss.rate > 0 ? `falling ${(boss.rate * 100).toFixed(2)}%/s` : ""));
         setText(el.bossEta, boss.eta > 0 && enc.live ? `about ${clock(boss.eta)} to go` : "");
-        el.bossFill.style.width = (boss.hp * 100).toFixed(1) + "%";
+        slideBar(el.bossFill, boss.hp, 300, true);
       }
     }
   }

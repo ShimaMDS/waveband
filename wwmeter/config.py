@@ -146,6 +146,9 @@ class Config:
     show_keys: bool = True
     # One-line meter: only the fight clock and the total per second.
     compact: bool = False
+    # Frames a second the meter's bars and figure move at: 60, or 120 for a smoother look. Each
+    # frame is a picture of the page the PC has to make while it moves (in a fight).
+    overlay_fps: int = 60
     # Take the meter off the screen when no fight is on. A finished fight stays up for a while
     # first, and anything the meter has to say (no log, HP not known) keeps it up.
     hide_between_fights: bool = False

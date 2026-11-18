@@ -338,7 +338,11 @@ needs a restart and no file has to be opened.
   Alt is taken, but marked: it won't reach Waveband while the game, run as administrator, is in
   front, unless Waveband runs as administrator too.
 - **Colours.** A colour of your own for each element.
-- **DPS Meter.** The theme, damage or percent, the size, and the switches the tray menu has.
+- **DPS Meter.** The theme, damage or percent, the size, the switches the tray menu has, and
+  "Smoother meter: 120 frames a second". The bars and the figure move at 60 frames a second
+  otherwise. Each frame is a picture of the page the PC makes while the meter moves: on the
+  demo fight about 18% of one CPU core at 60, 28% at 120 (0.3.1 drew one per monitor refresh,
+  about 45% on a 144 Hz screen).
 - **Rows.** Which figures each character's row shows and in what order (damage per second, total,
   share, time on field, damage per second on field), and how many decimals.
 - **Game.** The language of names, the game's log folder ("Find it for me" usually does it), the

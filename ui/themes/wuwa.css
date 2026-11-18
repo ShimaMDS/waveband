@@ -225,9 +225,12 @@ body {
 .channel .level i {
   display: block;
   height: 100%;
-  width: 0;
+  /* full width, scaled down to its share by app.js at the meter's frame rate: a scale is
+     put on screen by the GPU alone, a width lays the page out again */
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: left center;
   background: linear-gradient(90deg, color-mix(in srgb, var(--hue) 62%, white), var(--hue));
-  transition: width 0.35s ease-out;
 }
 
 .channel .rate,
@@ -284,9 +287,9 @@ body {
 
 .boss-fill {
   height: 100%;
-  width: 100%;
+  width: 100%; /* scaled down to the HP left by app.js, as the bars above */
+  transform-origin: left center;
   background: linear-gradient(90deg, #ffb24a, #ff5a2e 70%, #f2331f);
-  transition: width 0.3s linear;
 }
 
 /* the line of keys along the top; switched off from the tray menu */
@@ -359,7 +362,3 @@ body.wide {
   body.wide .meter { width: 100%; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .channel .level i,
-  .boss-fill { transition: none; }
-}

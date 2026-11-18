@@ -100,6 +100,12 @@ class Refused(ValueError):
     """A value the meter will not take, with the reason in words for the user."""
 
 
+def _fps(value) -> int:
+    if value not in (60, 120) or isinstance(value, bool):
+        raise Refused("has to be 60 or 120")
+    return int(value)
+
+
 def _flag(value) -> bool:
     if not isinstance(value, bool):
         raise Refused("has to be on or off")
@@ -234,6 +240,7 @@ def _checks(themes: list[str], languages: list[str]) -> dict:
         "boss_bar": _or_none(_boss_bar),
         "show_keys": _flag,
         "compact": _flag,
+        "overlay_fps": _fps,
         "hide_between_fights": _flag,
         "language": _one_of("", *languages),
         "row_figures": _row_figures,
@@ -261,6 +268,7 @@ NAMES = {  # a setting, as a message about it calls it
     "boss_bar": "The boss bar's place",
     "show_keys": "Showing the keybinds",
     "compact": "The one-line meter",
+    "overlay_fps": "The meter's frame rate",
     "hide_between_fights": "Hiding between fights",
     "language": "The language of names",
     "row_figures": "The figures on a row",
@@ -391,6 +399,7 @@ def describe(
         "themes": [{"name": name, "label": theme_label(name)} for name in themes],
         "display_unit": cfg.display_unit,
         "compact": bool(cfg.compact),
+        "overlay_fps": cfg.overlay_fps if cfg.overlay_fps in (60, 120) else 60,
         "show_keys": bool(cfg.show_keys),
         "hide_between_fights": bool(cfg.hide_between_fights),
         "hide_from_capture": bool(cfg.hide_from_capture),
