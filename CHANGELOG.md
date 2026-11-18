@@ -2,8 +2,9 @@
 
 ## 0.3.2 (not released yet)
 
-- **The meter is drawn by WebView2**, the web view built into Windows 10 and 11, instead of a
-  copy of Chromium that came with Waveband. It looks and works as before: on top of the game,
+- **The meter is drawn by WebView2 for good**, the web view built into Windows 10 and 11, instead
+  of a copy of Chromium that came with Waveband (Qt WebEngine, gone from Waveband from this
+  version on). It looks and works as before: on top of the game,
   clicks pass through it, hidden from screenshots if you choose, Alt+F11 to move and resize it.
   The download is about 57 MB instead of 181. If the meter doesn't show, *Waveband self-test*
   says why in its "overlay window" line.
