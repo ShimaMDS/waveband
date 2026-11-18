@@ -5,8 +5,8 @@
 - **The meter is drawn by WebView2**, the web view built into Windows 10 and 11, instead of a
   copy of Chromium that came with Waveband. It looks and works as before: on top of the game,
   clicks pass through it, hidden from screenshots if you choose, Alt+F11 to move and resize it.
-  If WebView2 is missing or won't start, Waveband uses the old overlay by itself. To go back to
-  it by hand: Settings, DPS Meter, "What draws the meter", then start Waveband again.
+  The download is about 57 MB instead of 181. If the meter doesn't show, *Waveband self-test*
+  says why in its "overlay window" line.
 - **A shorter tray menu**, in Windows' own style: copying the fight's summary, earlier sessions,
   hiding between fights and from screenshots, the line of keys, the theme, the dashboard,
   Settings and Waveband's updates. The rest has a keybind (showing or hiding the meter, damage

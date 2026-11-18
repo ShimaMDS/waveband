@@ -218,6 +218,14 @@ def _colours(value, current: dict) -> dict[str, str]:
     return merged
 
 
+def _has_qt() -> bool:
+    """Whether this copy of Waveband has Qt to draw the meter with (a release built with
+    ``--no-qt`` has not)."""
+    import importlib.util
+
+    return importlib.util.find_spec("PySide6") is not None
+
+
 def _checks(themes: list[str], languages: list[str]) -> dict:
     return {
         "capture_backend": _one_of("auto", "duplication", "printwindow"),
@@ -397,7 +405,9 @@ def describe(
         "show_keys": bool(cfg.show_keys),
         "hide_between_fights": bool(cfg.hide_between_fights),
         "hide_from_capture": bool(cfg.hide_from_capture),
-        "overlay_engine": cfg.overlay_engine if cfg.overlay_engine in ("webview2", "qt") else "webview2",
+        "overlay_engine": cfg.overlay_engine if cfg.overlay_engine in ("webview2", "qt") and _has_qt() else "webview2",
+        # a build without Qt has nothing to choose between: the page leaves the choice out
+        "qt_available": _has_qt(),
         "only_over_game": bool(cfg.only_over_game),
         "check_updates": bool(cfg.check_updates),
         "auto_update": bool(cfg.auto_update),
