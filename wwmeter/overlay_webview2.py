@@ -123,8 +123,14 @@ def _hresult(value) -> int:
 # -- COM: WebView2 (generated) and DirectComposition (the four calls made) ------------------------
 
 def _com():
-    """comtypes and the interfaces, imported only when the overlay starts."""
-    import comtypes  # noqa: F401 - initialises COM for this thread (single-threaded apartment)
+    """comtypes and the interfaces, imported only when the overlay starts, with COM started
+    on this thread. comtypes starts COM only on the thread that imports it first, and in the
+    meter that is the screen thread (bettercam imports it): seen 2026-11-18 as WebView2's
+    environment failing with CO_E_NOTINITIALIZED."""
+    hr = ctypes.windll.ole32.CoInitializeEx(None, 0x2)  # COINIT_APARTMENTTHREADED
+    if hr not in (0, 1):  # S_OK, or S_FALSE when already started the same way
+        raise Unavailable(f"COM would not start on the overlay's thread (0x{hr & 0xFFFFFFFF:08X})")
+    import comtypes  # noqa: F401
     from comtypes import COMMETHOD, GUID, COMObject, IUnknown
 
     from . import webview2_com as wv
