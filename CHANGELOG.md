@@ -1,6 +1,6 @@
 # What changed
 
-## 0.3.1 (beta)
+## 0.3.1
 
 - **The keys work again: they are Alt+F7 to Alt+F11 now** (Alt+Shift+F7 and Alt+Shift+F8 for the
   fight after and the one-line meter). The game runs as administrator, and Windows then passes
