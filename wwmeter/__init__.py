@@ -11,4 +11,4 @@ os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 
 # 0.2.0 is the first public release (on GitHub, as Waveband). Between releases this is the next
 # version with .dev0 on the end.
-__version__ = "0.3.1"
+__version__ = "0.3.2.dev0"

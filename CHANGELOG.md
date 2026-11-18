@@ -1,5 +1,7 @@
 # What changed
 
+## 0.3.2 (not released yet)
+
 ## 0.3.1
 
 - **The keys work again: they are Alt+F7 to Alt+F11 now** (Alt+Shift+F7 and Alt+Shift+F8 for the
