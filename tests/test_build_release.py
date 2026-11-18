@@ -102,3 +102,15 @@ class SourceTest(unittest.TestCase):
     def test_this_checkout_has_its_tools_tracked(self):
         names = build_release.tracked(os.path.join(build_release.ROOT, "tools"))
         self.assertIn("build_release.py", names)
+
+
+class NoQtTest(unittest.TestCase):
+    def test_qt_in_a_build_is_found(self):
+        with tempfile.TemporaryDirectory() as release:
+            internal = os.path.join(release, "_internal")
+            os.makedirs(os.path.join(internal, "numpy"))
+            self.assertEqual(build_release.qt_inside(release), [])
+            os.makedirs(os.path.join(internal, "PySide6"))
+            open(os.path.join(internal, "Qt6Core.dll"), "wb").close()
+            self.assertEqual(sorted(build_release.qt_inside(release)),
+                             [os.path.join("_internal", "PySide6"), os.path.join("_internal", "Qt6Core.dll")])

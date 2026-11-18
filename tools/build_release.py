@@ -165,6 +165,19 @@ def archives_inside(release: str) -> list[str]:
     return found
 
 
+def qt_inside(release: str) -> list[str]:
+    """Qt's files in a build, by folder or library name. There should be none: the meter has no
+    Qt since 0.3.2, and a build that took it in anyway (an old branch, a build environment that
+    has it) would be 300 MB bigger."""
+    found = []
+    for folder, dirs, files in os.walk(os.path.join(release, "_internal")):
+        for name in dirs + files:
+            low = name.lower()
+            if low in ("pyside6", "shiboken6") or (low.startswith("qt6") and low.endswith(".dll")):
+                found.append(os.path.relpath(os.path.join(folder, name), release))
+    return found
+
+
 def trim(release: str) -> float:
     """Delete bundled files the meter never loads. Returns the megabytes saved."""
     internal = os.path.join(release, "_internal")
@@ -243,6 +256,10 @@ def main(argv: list[str] | None = None) -> int:
         built = build_exe(work)
     shutil.copytree(built, release)
     print(f"trimmed {trim(release):.0f} MB of files the meter never loads")
+    qt = qt_inside(release)
+    if qt:
+        print("Qt is in the build, and Waveband has none since 0.3.2 (only some tools use it):", ", ".join(qt[:5]))
+        return 1
     print(f"unpacked base_library.zip into a folder: {unzip_base_library(release)} files")
 
     shutil.copytree(os.path.join(ROOT, "ui"), os.path.join(release, "ui"))
