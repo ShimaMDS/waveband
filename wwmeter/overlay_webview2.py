@@ -105,14 +105,40 @@ HWND_TOPMOST = wintypes.HWND(-1)
 SWP_NOSIZE, SWP_NOMOVE, SWP_NOZORDER, SWP_NOACTIVATE, SWP_FRAMECHANGED = 0x1, 0x2, 0x4, 0x10, 0x20
 WM_DESTROY, WM_CLOSE, WM_SETCURSOR, WM_NCHITTEST = 0x0002, 0x0010, 0x0020, 0x0084
 WM_TIMER, WM_MOUSEWHEEL, WM_EXITSIZEMOVE, WM_DPICHANGED = 0x0113, 0x020A, 0x0232, 0x02E0
-WM_HOTKEY, WM_NULL, WM_APP = 0x0312, 0x0000, 0x8000
+WM_HOTKEY, WM_NULL, WM_APP, WM_QUIT = 0x0312, 0x0000, 0x8000, 0x0012
+PM_REMOVE = 0x1
 WM_TRAY = WM_APP + 1  # the tray icon's messages
 WM_LBUTTONUP, WM_RBUTTONUP, WM_CONTEXTMENU = 0x0202, 0x0205, 0x007B
 HTCAPTION, HTTRANSPARENT = 2, -1
 IDC_SIZEALL = 32646
 WDA_NONE, WDA_EXCLUDEFROMCAPTURE = 0x0, 0x11
-TIMER_FOLLOW, TIMER_SETTINGS = 1, 2
+TIMER_FOLLOW, TIMER_SETTINGS, TIMER_RELOAD = 1, 2, 3
+RELOAD_AFTER = 2000  # ms before a page that would not load is asked for again
 CLASS_NAME = "WavebandOverlay"
+
+
+_WINDOWS: dict[int, "OverlayWindow"] = {}  # live overlay windows by handle
+
+
+def _dispatch(hwnd, msg, wparam, lparam):
+    """The class's one window procedure. A class keeps the procedure it was registered with, so
+    each window's own is looked up here (messages before it is known go to DefWindowProc)."""
+    window = _WINDOWS.get(hwnd)
+    if window is None:
+        return _user32.DefWindowProcW(hwnd, msg, wparam, lparam)
+    return window._wndproc(hwnd, msg, wparam, lparam)
+
+
+_PROC = WNDPROC(_dispatch)  # kept for the life of the process: Windows calls it
+
+
+def _register_class() -> None:
+    instance = _kernel32.GetModuleHandleW(None)
+    cls = _WNDCLASSEXW(cbSize=ctypes.sizeof(_WNDCLASSEXW), lpfnWndProc=_PROC,
+                       hInstance=instance, lpszClassName=CLASS_NAME)
+    if not _user32.RegisterClassExW(ctypes.byref(cls)) and ctypes.get_last_error() != 1410:
+        # 1410: ERROR_CLASS_ALREADY_EXISTS, from an earlier window: it has the same procedure
+        raise Unavailable(f"the overlay's window class: {ctypes.WinError(ctypes.get_last_error())}")
 
 
 def _hresult(value) -> int:
@@ -242,41 +268,44 @@ class OverlayWindow:
         self._webview = None
         self._keep: list = []  # handlers WebView2 holds on to
 
+        self.hwnd = None
         self._wv, self._handler, self._IUnknown, desktop_device, visual_type = _com()
-        instance = _kernel32.GetModuleHandleW(None)
-        self._proc = WNDPROC(self._wndproc)
-        cls = _WNDCLASSEXW(cbSize=ctypes.sizeof(_WNDCLASSEXW), lpfnWndProc=self._proc,
-                           hInstance=instance, lpszClassName=CLASS_NAME)
-        _user32.RegisterClassExW(ctypes.byref(cls))  # fails harmlessly when registered already
+        _register_class()
         ex = (WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_NOREDIRECTIONBITMAP
               | WS_EX_LAYERED | WS_EX_TRANSPARENT)
         x, y = self._start_position()
-        self.hwnd = _user32.CreateWindowExW(ex, CLASS_NAME, config_mod.NAME, WS_POPUP, x, y, 1, 1,
-                                            None, None, instance, None)
-        if not self.hwnd:
+        hwnd = _user32.CreateWindowExW(ex, CLASS_NAME, config_mod.NAME, WS_POPUP, x, y, 1, 1,
+                                       None, None, _kernel32.GetModuleHandleW(None), None)
+        if not hwnd:
             raise Unavailable(f"the overlay window could not be made: {ctypes.WinError(ctypes.get_last_error())}")
-        # A layered window shows nothing until told how: fully opaque; the per-pixel alpha comes
-        # from the composition visual
-        _user32.SetLayeredWindowAttributes(self.hwnd, 0, 255, LWA_ALPHA)
-        self._size_window()
-        self._apply_affinity()
-
-        device = ctypes.POINTER(desktop_device)()
-        hr = ctypes.windll.dcomp.DCompositionCreateDevice2(None, ctypes.byref(desktop_device._iid_),
-                                                           ctypes.byref(device))
-        if hr != 0:
-            raise Unavailable(f"DirectComposition would not start (0x{hr & 0xFFFFFFFF:08X})")
-        self._device = device
-        self._target = device.CreateTargetForHwnd(self.hwnd, True)
-        self._visual = device.CreateVisual()
-        self._target.SetRoot(self._visual.QueryInterface(visual_type))
-        device.Commit()
-        self._start_webview()
+        self.hwnd = hwnd
+        _WINDOWS[hwnd] = self
+        try:
+            # A layered window shows nothing until told how: fully opaque; the per-pixel alpha
+            # comes from the composition visual
+            _user32.SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA)
+            self._size_window()
+            self._apply_affinity()
+            device = ctypes.POINTER(desktop_device)()
+            hr = ctypes.windll.dcomp.DCompositionCreateDevice2(None, ctypes.byref(desktop_device._iid_),
+                                                               ctypes.byref(device))
+            if hr != 0:
+                raise Unavailable(f"DirectComposition would not start (0x{hr & 0xFFFFFFFF:08X})")
+            self._device = device
+            self._target = device.CreateTargetForHwnd(hwnd, True)
+            self._visual = device.CreateVisual()
+            self._target.SetRoot(self._visual.QueryInterface(visual_type))
+            device.Commit()
+            self._start_webview()
+        except BaseException:
+            self.close()  # no half-made window left behind
+            raise
 
     # -- WebView2 ---------------------------------------------------------------------------------
 
     def _start_webview(self) -> None:
-        # transparent from the first frame, before the controller exists to be told so
+        # transparent from the first frame, before the controller exists to be told so; taken out
+        # again once the view exists (_on_controller), so programs Waveband starts don't inherit it
         os.environ["WEBVIEW2_DEFAULT_BACKGROUND_COLOR"] = "00000000"
         loader = _loader()
         create = loader.CreateCoreWebView2EnvironmentWithOptions
@@ -293,6 +322,13 @@ class OverlayWindow:
         if _hresult(error):
             self._on_failed(f"WebView2's environment failed (0x{_hresult(error):08X})")
             return
+        try:
+            self._make_view(environment)
+        except Exception as fault:  # noqa: BLE001 - without a view there is no overlay: say so
+            traceback.print_exc()
+            self._on_failed(f"WebView2's view could not be made ({fault!r})")
+
+    def _make_view(self, environment) -> None:
         wv = self._wv
         env = environment.QueryInterface(wv.ICoreWebView2Environment3)
         self._environment = env
@@ -302,9 +338,17 @@ class OverlayWindow:
         env.CreateCoreWebView2CompositionController(self.hwnd, done)
 
     def _on_controller(self, error, composition) -> None:
+        os.environ.pop("WEBVIEW2_DEFAULT_BACKGROUND_COLOR", None)
         if _hresult(error):
             self._on_failed(f"WebView2's view failed (0x{_hresult(error):08X})")
             return
+        try:
+            self._show_page(composition)
+        except Exception as fault:  # noqa: BLE001 - without the page there is no overlay: say so
+            traceback.print_exc()
+            self._on_failed(f"WebView2 could not show the meter ({fault!r})")
+
+    def _show_page(self, composition) -> None:
         wv = self._wv
         self._composition = composition
         composition.put_RootVisualTarget(self._visual.QueryInterface(self._IUnknown))
@@ -322,6 +366,9 @@ class OverlayWindow:
         settings.put_IsZoomControlEnabled(False)
         settings.put_AreDevToolsEnabled(False)
         settings.put_AreDefaultScriptDialogsEnabled(False)
+        # Edge's "can't reach this page" is opaque and would sit over the game; without it a page
+        # that fails to load leaves the overlay empty (clear) until it loads (_on_loaded)
+        settings.put_IsBuiltInErrorPageEnabled(False)
         loaded = self._handler(wv.ICoreWebView2NavigationCompletedEventHandler, self._on_loaded)
         self._keep.append(loaded)
         webview.add_NavigationCompleted(loaded)
@@ -329,7 +376,11 @@ class OverlayWindow:
         webview.Navigate(self._url)
         self._device.Commit()
 
-    def _on_loaded(self, _sender, _args) -> None:
+    def _on_loaded(self, _sender, args) -> None:
+        if not args.get_IsSuccess():
+            print(f"the overlay page did not load ({self._url}); trying again", flush=True)
+            _user32.SetTimer(self.hwnd, TIMER_RELOAD, RELOAD_AFTER, None)
+            return
         self._run_script(move_script(self._cfg, self.moving))
 
     def _run_script(self, script: str) -> None:
@@ -402,7 +453,10 @@ class OverlayWindow:
     def follow_game(self) -> None:
         """Show only over the game, with a short grace so brief focus changes don't flicker."""
         now = time.monotonic()
-        in_front = self.moving or game_in_front(self._cfg, self.hwnd)
+        # Not this window: the tray menu brings it to the front to be closed by a click away, and
+        # it would then count as the game, show over the desktop and take the hotkeys. Moving
+        # it never makes it the foreground window (it takes no focus).
+        in_front = self.moving or game_in_front(self._cfg, 0)
         if self.on_front is not None:
             self.on_front(in_front)
         if in_front or not self._cfg.only_over_game:
@@ -470,6 +524,11 @@ class OverlayWindow:
                 delta = ctypes.c_short(wparam >> 16 & 0xFFFF).value
                 self.nudge_zoom(0.05 if delta > 0 else -0.05)
                 return 0
+            if msg == WM_TIMER and wparam == TIMER_RELOAD:
+                _user32.KillTimer(hwnd, TIMER_RELOAD)
+                if self._webview is not None:
+                    self._webview.Navigate(self._url)
+                return 0
             if msg == WM_DPICHANGED:
                 self._size_window()
                 self._apply_scale()
@@ -498,7 +557,9 @@ class OverlayWindow:
             hwnd, self.hwnd = self.hwnd, None
             _user32.KillTimer(hwnd, TIMER_FOLLOW)
             _user32.KillTimer(hwnd, TIMER_SETTINGS)
-            _user32.DestroyWindow(hwnd)
+            _user32.KillTimer(hwnd, TIMER_RELOAD)
+            _user32.DestroyWindow(hwnd)  # its WM_DESTROY still reaches this window's procedure
+            _WINDOWS.pop(hwnd, None)
 
 
 # -- the tray icon --------------------------------------------------------------------------------
@@ -651,8 +712,10 @@ def run(
         window = OverlayWindow(url, cfg, on_failed)
         tray = Tray(window.hwnd, f"{config_mod.NAME} {__version__}")
 
+        hwnd = window.hwnd
+
         def quit_app() -> None:  # from any thread (the updater's too)
-            _user32.PostMessageW(window.hwnd, WM_CLOSE, 0, 0)
+            _user32.PostMessageW(hwnd, WM_CLOSE, 0, 0)
 
         controls = Controls(
             cfg=cfg, overlay=window, notify=tray.notify, quit=quit_app, on_reset=on_reset,
@@ -716,6 +779,12 @@ def run(
             tray.remove()
         if window is not None:
             window.close()
+        # Closing posts a quit (WM_DESTROY), and a failure posted one before: left in the queue,
+        # it would end the next message loop on this thread at once (the Qt overlay's, run from
+        # source as the fallback)
+        leftover = wintypes.MSG()
+        while _user32.PeekMessageW(ctypes.byref(leftover), None, WM_QUIT, WM_QUIT, PM_REMOVE):
+            pass
     if failed:
         raise Unavailable(failed[0])
     return 0

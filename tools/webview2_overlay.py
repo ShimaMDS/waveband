@@ -113,7 +113,8 @@ def main() -> int:
     window = ov.OverlayWindow(url, cfg, failed.append)
     loaded: list[bool] = []
     original = window._on_loaded
-    window._on_loaded = lambda *a: (loaded.append(True), original(*a))
+    # only a load that worked: a failed one is tried again by the overlay (no error page)
+    window._on_loaded = lambda sender, args: (args.get_IsSuccess() and loaded.append(True), original(sender, args))
     window._set_visible(True)
     results: list[tuple[str, bool, str]] = []
 
@@ -136,7 +137,7 @@ def main() -> int:
         return answer[0] if answer else None
 
     try:
-        if not pump(20, lambda: bool(loaded) or bool(failed)) or failed:
+        if not pump(90, lambda: bool(loaded) or bool(failed)) or failed:
             print(f"FAIL: the page never loaded {failed}")
             return 1
         pump(2.5)  # fonts, and the demo fight's numbers

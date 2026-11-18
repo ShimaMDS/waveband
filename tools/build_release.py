@@ -33,8 +33,12 @@ from wwmeter.config import NAME  # noqa: E402
 DATA_FILES = ("characters.json", "names.json", "enemy_hp.json", "part_shares.json",
               "ocr/ch_PP-OCRv3_rec_infer.onnx", "ocr/NOTICE.txt")
 SOURCE_FILES = ("requirements.txt", "run.bat")
-# fetched by tools/make_webview2_com.py from Microsoft's WebView2 SDK
-WEBVIEW2_FILES = ("WebView2Loader.dll", "LICENSE.txt")
+# fetched by tools/make_webview2_com.py from Microsoft's WebView2 SDK 1.0.4314.35 (the x64
+# loader, signed by Microsoft), with their SHA-256: the build ships these files and no others
+WEBVIEW2_FILES = {
+    "WebView2Loader.dll": "d3fce90bdeecb08596e377dea6a316354dd8949e32ff09b89d51be00c14e21b6",
+    "LICENSE.txt": "0af8f1b807512aae39c2ac1aa4d0cae65cabecb6fd554b8439a5162a0d6eca55",
+}
 SOURCE_NOTE = (
     "This is the source Waveband.exe was built from, included so you can read what it does.\n\n"
     "You do not need it to use the meter. To run from source instead of the .exe (Python 3.11 or\n"
@@ -281,6 +285,12 @@ def main(argv: list[str] | None = None) -> int:
     missing = [f for f in WEBVIEW2_FILES if not os.path.isfile(os.path.join(ROOT, "lib", "webview2", f))]
     if missing:
         print(f"Missing from lib\\webview2\\: {missing}. Run tools\\make_webview2_com.py first.")
+        return 1
+    changed = [f for f, digest in WEBVIEW2_FILES.items()
+               if sha256(os.path.join(ROOT, "lib", "webview2", f)) != digest]
+    if changed:
+        print(f"Not the pinned SDK's files in lib\\webview2\\: {changed}. Delete the folder and run "
+              "tools\\make_webview2_com.py again (or pin the new SDK's hashes here on purpose).")
         return 1
 
     work = os.path.join(out, "work")

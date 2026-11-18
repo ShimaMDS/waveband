@@ -25,6 +25,9 @@ def _root() -> str:
 
 
 ROOT = _root()
+# True when nothing shows what the meter prints (pythonw from run.bat, the packaged .exe): its
+# output goes to waveband.log and only a window can tell the user anything. Set by __main__.
+HEADLESS = False
 # What the meter is called where a user sees it. The package, its settings line and its temp
 # folders keep the internal name, wwmeter.
 NAME = "Waveband"
