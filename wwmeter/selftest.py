@@ -111,10 +111,26 @@ def _checks(cfg: config.Config):
         return f"read {title!r} from a test image"
 
     def overlay_parts():
-        from PySide6.QtCore import qVersion
-        from PySide6.QtWebEngineWidgets import QWebEngineView  # noqa: F401 - the import is the test
+        from . import overlay_webview2
 
-        return f"Qt {qVersion()} with its web view"
+        try:
+            webview = f"WebView2 Runtime {overlay_webview2.runtime_version()}"
+        except overlay_webview2.Unavailable as why:
+            webview = ""
+            missing = f"no WebView2 ({why})"
+        try:
+            from PySide6.QtCore import qVersion
+            from PySide6.QtWebEngineWidgets import QWebEngineView  # noqa: F401 - the import is the test
+
+            qt = f"Qt {qVersion()} with its web view"
+        except ImportError:
+            qt = ""
+        if not webview and not qt:
+            raise RuntimeError(f"{missing}, and no Qt to draw the meter instead. Install the WebView2 "
+                               "Runtime from https://developer.microsoft.com/microsoft-edge/webview2/")
+        chosen = "qt" if cfg.overlay_engine == "qt" or not webview else "webview2"
+        uses = "drawn by Qt" + ("" if cfg.overlay_engine == "qt" else ", as WebView2 is missing")             if chosen == "qt" else "drawn by WebView2"
+        return f"{uses}; " + "; ".join(part for part in (webview or missing, qt or "no Qt") if part)
 
     def keys():
         chosen = hotkeys.bindings(cfg.hotkeys)

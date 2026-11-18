@@ -14,141 +14,47 @@ import time
 import webbrowser
 from collections.abc import Callable
 
-import win32gui
-import win32process
-from PySide6.QtCore import QAbstractNativeEventFilter, QEvent, QObject, QPoint, QRect, Qt, QTimer, QUrl
-from PySide6.QtGui import QAction, QColor, QGuiApplication, QIcon, QPainter, QPixmap
+from PySide6.QtCore import QAbstractNativeEventFilter, QEvent, QObject, QPoint, Qt, QTimer, QUrl
+from PySide6.QtGui import QAction, QColor, QIcon, QPainter, QPixmap
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from . import __version__
 from . import config as config_mod
 from . import hotkeys as hotkey_names
-from .capture import client_rect_on_screen, find_game_window, set_dpi_aware
+from .capture import set_dpi_aware
+from .overlay_common import (
+    BASE_SIZE, HIDE_AFTER, WM_HOTKEY, HotkeySet, default_position, game_in_front, move_script, on_a_screen,
+)
 from .settings import ZOOM, available_themes, theme_label
 
 _user32 = ctypes.windll.user32
-_kernel32 = ctypes.windll.kernel32
 _WDA_NONE = 0x0
 _WDA_EXCLUDEFROMCAPTURE = 0x11
-_WM_HOTKEY = 0x0312
-_MOD_NOREPEAT = 0x4000
-_PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
-_BASE_SIZE = (424, 380)  # UI at zoom 1.0, in pixels
-_HIDE_AFTER = 1.0  # seconds the game must be out of focus before the overlay hides
-# The hint is an element of its own, not ``.meter::after``: the themes draw with that (the wuwa
-# theme's diamond), and the hint was squeezed into it, out of sight.
-_MOVE_STYLE = """
-(() => {
-  let s = document.getElementById('move-style');
-  if (!s) {
-    s = document.createElement('style');
-    s.id = 'move-style';
-    s.textContent = `body.moving .meter{outline:2px dashed #f2b544;outline-offset:2px;cursor:move}
-      #move-hint{display:none}
-      body.moving #move-hint{display:block;padding:6px 12px 8px;font-size:.84rem;color:#f2b544;
-      border-top:1px solid rgba(236,230,216,.12);text-transform:none;letter-spacing:normal}`;
-    document.head.appendChild(s);
-  }
-  const meter = document.querySelector('.meter');
-  let hint = document.getElementById('move-hint');
-  if (meter && !hint) {
-    hint = document.createElement('div');
-    hint.id = 'move-hint';
-    meter.appendChild(hint);
-  }
-  if (hint) hint.textContent = 'Drag to move. Scroll to resize. __LOCK__';
-  document.body.classList.toggle('moving', %s);
-})();
-"""
-
-
-def _process_name(hwnd: int) -> str:
-    """Executable name of the process owning a window, lower case. '' when it can't be read.
-
-    Only ever called for the foreground window when that window is not the game.
-    """
-    try:
-        _, pid = win32process.GetWindowThreadProcessId(hwnd)
-    except Exception:  # noqa: BLE001 - window vanished between calls
-        return ""
-    handle = _kernel32.OpenProcess(_PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
-    if not handle:
-        return ""
-    try:
-        size = ctypes.wintypes.DWORD(1024)
-        buffer = ctypes.create_unicode_buffer(size.value)
-        if not _kernel32.QueryFullProcessImageNameW(handle, 0, buffer, ctypes.byref(size)):
-            return ""
-        return os.path.basename(buffer.value).lower()
-    finally:
-        _kernel32.CloseHandle(handle)
+_BASE_SIZE = BASE_SIZE
+_HIDE_AFTER = HIDE_AFTER
 
 
 class _HotkeyFilter(QAbstractNativeEventFilter):
-    """System-wide hotkeys, held only while the game is in front.
-
-    A registered hotkey is taken from every other program, and the defaults are bare function
-    keys, so they are given back the moment the game loses focus: F9 in a browser stays F9.
-    """
+    """The hotkeys (``overlay_common.HotkeySet``), their WM_HOTKEY read from Qt's event loop."""
 
     def __init__(
         self, keys: dict[str, str], dispatch: Callable[[str], None],
         on_taken: Callable[[list[str]], None] | None = None,
     ) -> None:
         super().__init__()
-        self._dispatch = dispatch
-        self._on_taken = on_taken  # told which keys another program is holding
-        self._keys: dict[int, tuple[int, int, str]] = {}  # hotkey ID -> (modifiers, key, action)
-        self._names: dict[int, str] = {}  # hotkey ID -> the key as written, "F9"
-        self._held: list[int] = []
-        self._active = False  # whether the keys are wanted now: the game is in front
-        self._load(keys)
-
-    def _load(self, keys: dict[str, str]) -> None:
-        self._keys, self._names = {}, {}
-        for hotkey_id, (action, name) in enumerate(keys.items(), start=1):
-            parsed = hotkey_names.parse(name)
-            if parsed is not None:
-                self._keys[hotkey_id] = (*parsed, action)
-                self._names[hotkey_id] = name
+        self._set = HotkeySet(keys, dispatch, on_taken)
 
     def rebind(self, keys: dict[str, str]) -> None:
-        """Other keys, chosen on the settings page while the meter runs."""
-        active = self._active
-        self.set_active(False)
-        self._load(keys)
-        if self._on_taken is not None:
-            self._on_taken([])  # what was said about the old keys no longer holds
-        self.set_active(active)
+        self._set.rebind(keys)
 
     def set_active(self, active: bool) -> None:
-        self._active = active
-        if active == bool(self._held) or not self._keys:
-            return
-        if active:
-            refused = []
-            for hotkey_id, (modifiers, key, _) in self._keys.items():
-                if _user32.RegisterHotKey(None, hotkey_id, modifiers | _MOD_NOREPEAT, key):
-                    self._held.append(hotkey_id)
-                else:
-                    refused.append(self._names[hotkey_id])
-            # A key Windows will not give is one another program holds. It would do nothing
-            # here and say nothing, so the meter is told and says it.
-            if self._on_taken is not None:
-                self._on_taken(refused)
-            if not self._held:
-                self._keys = {}  # every key is taken by another program: stop retrying
-        else:
-            for hotkey_id in self._held:
-                _user32.UnregisterHotKey(None, hotkey_id)
-            self._held = []
+        self._set.set_active(active)
 
     def nativeEventFilter(self, event_type, message):  # noqa: N802 - Qt naming
         if event_type == b"windows_generic_MSG":
             msg = ctypes.wintypes.MSG.from_address(int(message))
-            if msg.message == _WM_HOTKEY and msg.wParam in self._keys:
-                self._dispatch(self._keys[msg.wParam][2])
+            if msg.message == WM_HOTKEY and self._set.handle(msg.wParam):
                 return True, 0
         return False, 0
 
@@ -221,9 +127,7 @@ class OverlayWindow(QWebEngineView):
             return 1.0
 
     def _move_script(self) -> str:
-        lock_key = hotkey_names.bindings(self._cfg.hotkeys)["move"]
-        lock_hint = f"{lock_key} locks it." if lock_key else "Lock it from the tray menu."
-        return _MOVE_STYLE.replace("__LOCK__", lock_hint) % ("true" if self.moving else "false")
+        return move_script(self._cfg, self.moving)
 
     def _apply_geometry(self, initial: bool = False) -> None:
         """Size the window for its zoom. ``initial`` also puts it where the settings say."""
@@ -241,11 +145,7 @@ class OverlayWindow(QWebEngineView):
 
     @staticmethod
     def _default_position() -> tuple[int, int]:
-        hwnd = find_game_window()
-        if hwnd is None:
-            return 40, 400
-        left, top, _, bottom = client_rect_on_screen(hwnd)
-        return left + 28, top + round((bottom - top) * 0.42)
+        return default_position()
 
     def _on_loaded(self, _ok: bool) -> None:
         proxy = self.focusProxy()
@@ -262,18 +162,7 @@ class OverlayWindow(QWebEngineView):
 
     def _game_in_front(self) -> bool:
         """True while the game, this overlay or a screenshot tool has focus."""
-        game = find_game_window()
-        if game is None:
-            return False
-        foreground = win32gui.GetForegroundWindow()
-        if foreground in (game, int(self.winId())):
-            return True
-        # Taking a screenshot moves focus to the snipping tool; the overlay has to stay up for
-        # that or it would vanish from every screenshot.
-        if not foreground:
-            return False
-        tools = {str(name).lower() for name in self._cfg.capture_tools or ()}
-        return _process_name(foreground) in tools
+        return game_in_front(self._cfg, int(self.winId()))
 
     def _follow_game(self) -> None:
         """Show only over the game, with a short grace so brief focus changes don't flicker."""
@@ -336,13 +225,7 @@ class OverlayWindow(QWebEngineView):
 
 
 def _on_a_screen(x: int, y: int, width: int, height: int) -> bool:
-    """True when enough of a window there is on some screen to see it and get hold of it."""
-    window = QRect(x, y, width, height)
-    for screen in QGuiApplication.screens():
-        seen = screen.geometry().intersected(window)
-        if seen.width() >= 80 and seen.height() >= 40:
-            return True
-    return False
+    return on_a_screen(x, y, width, height)
 
 
 def _tray_icon() -> QIcon:

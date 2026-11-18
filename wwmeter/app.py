@@ -366,17 +366,34 @@ def run(cfg: Config, demo: bool = False, overlay: bool = True) -> int:
     print(f"settings: {dashboard}#settings", flush=True)
     try:
         if overlay:
-            from . import overlay as overlay_mod
-
-            return overlay_mod.run(
+            args = (
                 server.url + "?view=overlay", cfg, tracker.reset, dashboard, tracker.view_step,
                 copy_summary, on_keys_taken, earlier_sessions, open_session,
                 update_tables, update_finished,
-                app_actions={"check": check_app, "install": install_app, "said": app_said,
-                             "available": lambda: app_updates.release.version
-                             if app_updates.status == "available" and app_updates.release else "",
-                             "set_quit": lambda do: quit_app.update(do=do)},
             )
+            app_actions = {"check": check_app, "install": install_app, "said": app_said,
+                           "available": lambda: app_updates.release.version
+                           if app_updates.status == "available" and app_updates.release else "",
+                           "set_quit": lambda do: quit_app.update(do=do)}
+            if cfg.overlay_engine != "qt":
+                from . import overlay_webview2
+
+                try:
+                    return overlay_webview2.run(*args, app_actions=app_actions)
+                except overlay_webview2.Unavailable as why:
+                    # Qt's overlay takes over: the meter shows either way
+                    print(f"WebView2 can't show the overlay ({why}); using Qt's", flush=True)
+                except Exception:  # noqa: BLE001 - a fault in the new overlay must not end the meter
+                    import traceback
+
+                    traceback.print_exc()
+                    print("The WebView2 overlay stopped with the error above; using Qt's", flush=True)
+            try:
+                from . import overlay as overlay_mod
+            except ImportError as error:
+                print(f"no overlay: Qt is not here either ({error})", flush=True)
+            else:
+                return overlay_mod.run(*args, app_actions=app_actions)
         print("no overlay window; press Ctrl+C to quit", flush=True)
         while True:
             time.sleep(1.0)

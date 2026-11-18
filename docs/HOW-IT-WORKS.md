@@ -33,6 +33,12 @@ settings line).
 game is in front. Quit from the tray icon. The game has to run in Borderless or Windowed mode:
 nothing can draw over exclusive fullscreen. Errors go to `waveband.log` beside the program.
 
+**What draws it.** The meter is a web page (`ui\`) shown in a window of its own: since 0.3.2 by
+WebView2, the web view Windows 10 and 11 already have, and up to 0.3.1 by Qt's own copy of
+Chromium. Qt is kept for one version as a fallback: Settings, DPS Meter, "What draws the meter",
+and Waveband uses it by itself when WebView2 is missing or won't start (`waveband.log` says so).
+WebView2 keeps a cache in `%LOCALAPPDATA%\Waveband\WebView2`; the uninstaller deletes it.
+
 **Keys.** They work only while the game is in front, so they stay free everywhere else. The game
 itself uses F1 to F6.
 
@@ -320,8 +326,8 @@ against the RFC's own test vectors.
 ## Settings
 
 "Settings" in the tray menu opens the settings page of the dashboard
-(`http://127.0.0.1:5055/?view=full#settings`). Changes are checked, saved and used at once; nothing
-needs a restart and no file has to be opened.
+(`http://127.0.0.1:5055/?view=full#settings`). Changes are checked, saved and used at once; only
+"What draws the meter" waits for the next start, and no file has to be opened.
 
 - **Keybinds.** Click a keybind, then press the key you want. Function keys, letters, digits and the
   navigation keys work, alone or with Ctrl, Alt or Shift; a letter or digit needs Ctrl or Alt,
@@ -329,7 +335,8 @@ needs a restart and no file has to be opened.
   Alt is taken, but marked: it won't reach Waveband while the game, run as administrator, is in
   front, unless Waveband runs as administrator too.
 - **Colours.** A colour of your own for each element.
-- **DPS Meter.** The theme, damage or percent, the size, and the switches the tray menu has.
+- **DPS Meter.** The theme, damage or percent, the size, the switches the tray menu has, and what
+  draws the meter (WebView2 or Qt).
 - **Rows.** Which figures each character's row shows and in what order (damage per second, total,
   share, time on field, damage per second on field), and how many decimals.
 - **Game.** The language of names, the game's log folder ("Find it for me" usually does it), the
@@ -337,7 +344,7 @@ needs a restart and no file has to be opened.
   them without asking.
 - **Import / Export.** All settings as one line of text starting `wwmeter1:`, to paste into Waveband on
   another PC or into a bug report. It leaves out the log folder (its path can contain your
-  Windows user name) and the port.
+  Windows user name), the port, and what draws the meter (that is about this PC's WebView2).
 
 Settings are kept in `config.json` beside the program, written the first time one changes; the
 fields and defaults are in `wwmeter\config.py`. A few are only there, for hand editing with
@@ -411,7 +418,9 @@ Tools, run with `.venv\Scripts\python tools\<name>.py`:
 | `build_release.py --out <folder>` | Build `Waveband.exe`, the zip, the installer and the signed checksums. See [RELEASING.md](RELEASING.md) |
 | `release_key.py` | The release signing key: make, lock, sign, verify |
 | `sign_release.bat` | Drag a release's `SHA256SUMS.txt` onto it: shows the file, asks for the key's passphrase, signs and checks the signature |
-| `test_exe.py <folder>` | Smoke-test a built `Waveband.exe` |
+| `test_exe.py <folder>` or `--source` | Smoke-test a built `Waveband.exe` (or the source): the self-test, then a demo with each overlay, WebView2's quit as the tray menu quits it |
+| `make_webview2_com.py` | Fetch Microsoft's WebView2 SDK (pinned, hash-checked): its loader into `lib\webview2\`, and `wwmeter\webview2_com.py` written from its `WebView2.h`. Run once after cloning |
+| `webview2_overlay.py` | Check the WebView2 overlay on this PC against a running meter: transparency, clicks passing, move mode, out of screenshots, memory |
 | `render_page.py`, `drive_page.py` | Render or script a page of a running meter, to check the look and the controls without the game; `settings_walk.js` is the `drive_page.py` script that uses every control of the settings page (against a demo meter with settings of its own) |
 | `screenshots.py` | Take the README's pictures from the demo meter |
 | `memory_steps.py [page]` | Load the meter's parts one after another and say how much memory each adds (commit and working set), ending with the overlay page of a running meter |
@@ -426,7 +435,9 @@ Tools, run with `.venv\Scripts\python tools\<name>.py`:
 
 - **Not sure what's wrong:** run "Waveband self-test" from the Start menu, `selftest.bat` in the
   zip, or `python -m wwmeter selftest`. It checks each part and writes `selftest.txt`.
-- **The meter doesn't show:** the game has to be in front, in Borderless or Windowed mode.
+- **The meter doesn't show:** the game has to be in front, in Borderless or Windowed mode. If it
+  still doesn't, look in `waveband.log` and the self-test's "overlay window" line; switching
+  "What draws the meter" to Qt and starting Waveband again gets the old overlay back.
 - **The meter is missing from screenshots:** "Hide from screenshots and streams" is on.
 - **"Can't find the game's log file":** Settings, The game, "Find it for me", or paste the game's
   folder. The log lives in `...\Wuthering Waves Game\Client\Saved\Logs`.
@@ -463,7 +474,9 @@ and `JoinSceneNotify] Begin [InstanceId: n]`. Then rebuild and check the boss HP
 | `wwmeter\gamedata.py`, `data\enemy_hp.json`, `data\part_shares.json` | Which placement an enemy is, its full HP and name from the game's data, and the share of a boss's HP each part is |
 | `wwmeter\update.py` | `wwmeter update`: fetch the game's data and rebuild `data\enemy_hp.json` |
 | `wwmeter\hud.py`, `ocr.py`, `capture.py`, `engine.py` | The boss bar and its title from a frame (`ocr.py` runs PaddleOCR's text recognizer, `data\ocr`, on ONNX Runtime); frames of the game window; the log and screen threads |
-| `wwmeter\server.py`, `app.py`, `overlay.py` | The local server, the wiring, the overlay window and tray |
+| `wwmeter\server.py`, `app.py` | The local server and the wiring |
+| `wwmeter\overlay_webview2.py`, `webview2_com.py`, `lib\webview2\` | The overlay window on WebView2 (DirectComposition, click-through, out of screenshots) and the Windows tray icon and menu; the WebView2 COM interfaces (written by `tools\make_webview2_com.py`); WebView2's loader |
+| `wwmeter\overlay_common.py`, `overlay.py` | What both overlays share (hotkeys, the tray menu's entries and actions, following the game); the Qt overlay, the fallback |
 | `wwmeter\settings.py`, `ui\settings.js` | The settings page and the one-line settings export |
 | `wwmeter\selfupdate.py`, `signing.py` | Waveband's own updates, and Ed25519 signatures with the release key's public half |
 | `wwmeter\sessions.py`, `summary.py`, `changelog.py` | Session files, the copied summary, What changed |

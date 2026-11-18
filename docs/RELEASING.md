@@ -10,7 +10,9 @@ to hold before one goes out.
    are written for users. Run the tests (one fails when the top section is not
    for the version in the source), and bring this file and `tools\START HERE.txt` (the
    testers' one-page guide) up to date.
-2. In a fresh environment, outside this folder:
+2. Once per clone, `.venv\Scripts\python tools\make_webview2_com.py` fetches WebView2's loader
+   into `lib\webview2\` (the build stops without it). Then, in a fresh environment, outside this
+   folder:
    `python -m venv build-env`, then
    `build-env\Scripts\python -m pip install -r requirements.txt pyinstaller`, then
    `build-env\Scripts\python tools\build_release.py --out <a folder outside this one>`.
@@ -21,7 +23,7 @@ to hold before one goes out.
    left in the folder loads, found by reading the import tables with `pefile`), unpacks
    PyInstaller's `base_library.zip` into a folder of the same name (Nexus Mods rejects an
    upload with an archive inside it; the build stops if any is left), adds
-   `ui\`, the data files (the boss HP tables, names, characters, part shares and the text
+   `ui\`, WebView2's loader and its licence (`lib\webview2\`), the data files (the boss HP tables, names, characters, part shares and the text
    reader's model in `data\ocr`), the guide, `README.md`, `CHANGELOG.md`, the `docs\` folder,
    `selftest.bat`, `LICENSE` and the source, and zips it. Then it compiles the installer,
    `Waveband-<version>-setup.exe`, from `tools\installer\waveband.iss` with Inno Setup 6.7 or
@@ -30,7 +32,8 @@ to hold before one goes out.
    file with the release key into `SHA256SUMS.txt.sig`. Without the key it says so and fails
    (`--unsigned` for a test build): installed copies would not install the release.
 3. `.venv\Scripts\python tools\test_exe.py <out>\Waveband-<version>` runs the packaged self-test
-   and a demo with the overlay parked off-screen, and saves a picture of the overlay to look at.
+   and a demo with each overlay (WebView2 in the screen's bottom right corner for a few seconds,
+   then quit as the tray menu quits it; Qt parked off-screen), and saves a picture of each.
 4. Publish a GitHub release tagged `v<version>` with four files: the setup, the zip,
    `SHA256SUMS.txt` and `SHA256SUMS.txt.sig`, at https://github.com/ShimaMDS/waveband. Installed
    copies find it through `REPO` in `wwmeter\selfupdate.py`. Copy the zip into

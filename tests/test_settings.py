@@ -233,6 +233,25 @@ class LogFolderTest(unittest.TestCase):
             self.assertEqual(cfg.log_dir, logs)
 
 
+class OverlayEngineTest(unittest.TestCase):
+    def test_webview2_or_qt(self):
+        cfg = Config(log_dir="x")
+        self.assertEqual(cfg.overlay_engine, "webview2")
+        self.assertEqual(apply(cfg, {"overlay_engine": "qt"}), ({"overlay_engine"}, []))
+        self.assertEqual(cfg.overlay_engine, "qt")
+        for bad in ("chromium", "", None, 1):
+            changed, refused = apply(cfg, {"overlay_engine": bad})
+            self.assertEqual((changed, len(refused)), (set(), 1), bad)
+            self.assertTrue(refused[0].startswith("What draws the meter: "), refused)
+        self.assertEqual(cfg.overlay_engine, "qt")
+
+    def test_it_stays_on_this_pc(self):
+        source = Config(log_dir="x", overlay_engine="qt")
+        target = Config(log_dir="y")
+        settings.take_line(target, settings.export(source), THEMES, LANGUAGES)
+        self.assertEqual(target.overlay_engine, "webview2")
+
+
 class LineTest(unittest.TestCase):
     def changed_config(self) -> Config:
         cfg = Config(log_dir=r"C:\Users\somebody\Wuthering Waves\Client\Saved\Logs", port=6123)

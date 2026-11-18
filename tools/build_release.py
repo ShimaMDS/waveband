@@ -33,10 +33,12 @@ from wwmeter.config import NAME  # noqa: E402
 DATA_FILES = ("characters.json", "names.json", "enemy_hp.json", "part_shares.json",
               "ocr/ch_PP-OCRv3_rec_infer.onnx", "ocr/NOTICE.txt")
 SOURCE_FILES = ("requirements.txt", "run.bat")
+# fetched by tools/make_webview2_com.py from Microsoft's WebView2 SDK
+WEBVIEW2_FILES = ("WebView2Loader.dll", "LICENSE.txt")
 SOURCE_NOTE = (
     "This is the source Waveband.exe was built from, included so you can read what it does.\n\n"
     "You do not need it to use the meter. To run from source instead of the .exe (Python 3.11 or\n"
-    "newer): copy the ui and data folders from the folder above into this one, then double-click\n"
+    "newer): copy the ui, data and lib folders from the folder above into this one, then double-click\n"
     "run.bat. The first start downloads the libraries listed in requirements.txt.\n"
 )
 SELFTEST_BAT = '@echo off\r\ncd /d "%~dp0"\r\nstart "" /wait Waveband.exe selftest\r\nif exist selftest.txt start "" notepad selftest.txt\r\n'
@@ -83,8 +85,9 @@ def version_info(version: str) -> str:
     )
 
 
-def build_exe(work: str) -> str:
-    """Run PyInstaller; returns the folder holding Waveband.exe and _internal."""
+def build_exe(work: str, qt: bool = True) -> str:
+    """Run PyInstaller; returns the folder holding Waveband.exe and _internal. Without ``qt``
+    the build has no Qt: the overlay is WebView2's alone, with no fallback."""
     os.makedirs(work, exist_ok=True)
     version_file = os.path.join(work, "version-info.txt")
     with open(version_file, "w", encoding="utf-8") as fh:
@@ -105,6 +108,7 @@ def build_exe(work: str) -> str:
         # needs ONNX Runtime alone, with its model in data\ocr
         "--exclude-module", "cv2",
         "--exclude-module", "tkinter",
+        *([] if qt else ["--exclude-module", "PySide6", "--exclude-module", "shiboken6"]),
         os.path.join(ROOT, "tools", "exe_entry.py"),
     ]
     subprocess.run(command, check=True)
@@ -261,6 +265,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--no-installer", action="store_true", help="the zip alone is enough")
     parser.add_argument("--unsigned", action="store_true", help="a test build: no release key needed")
     parser.add_argument("--sign", action="store_true", help="ask for the release key's passphrase and sign (in a terminal)")
+    parser.add_argument("--no-qt", action="store_true", help="leave Qt out: WebView2 draws the overlay, with no fallback")
     args = parser.parse_args(argv)
     out = os.path.abspath(args.out)
     name = f"{NAME}-{__version__}"
@@ -273,6 +278,10 @@ def main(argv: list[str] | None = None) -> int:
     if missing:
         print(f"Missing from data\\: {missing}. Build enemy_hp.json with tools\\build_enemy_hp.py first.")
         return 1
+    missing = [f for f in WEBVIEW2_FILES if not os.path.isfile(os.path.join(ROOT, "lib", "webview2", f))]
+    if missing:
+        print(f"Missing from lib\\webview2\\: {missing}. Run tools\\make_webview2_com.py first.")
+        return 1
 
     work = os.path.join(out, "work")
     shutil.rmtree(release, ignore_errors=True)
@@ -280,12 +289,16 @@ def main(argv: list[str] | None = None) -> int:
     if not (args.keep_work and os.path.isfile(os.path.join(built, NAME + ".exe"))):
         shutil.rmtree(work, ignore_errors=True)
         os.makedirs(out, exist_ok=True)
-        built = build_exe(work)
+        built = build_exe(work, qt=not args.no_qt)
     shutil.copytree(built, release)
     print(f"trimmed {trim(release):.0f} MB of files the meter never loads")
     print(f"unpacked base_library.zip into a folder: {unzip_base_library(release)} files")
 
     shutil.copytree(os.path.join(ROOT, "ui"), os.path.join(release, "ui"))
+    # WebView2's loader, which finds the runtime Windows has; its BSD licence goes along
+    os.makedirs(os.path.join(release, "lib", "webview2"))
+    for file in WEBVIEW2_FILES:
+        shutil.copy2(os.path.join(ROOT, "lib", "webview2", file), os.path.join(release, "lib", "webview2", file))
     os.makedirs(os.path.join(release, "data"))
     for file in DATA_FILES:
         os.makedirs(os.path.dirname(os.path.join(release, "data", file)), exist_ok=True)

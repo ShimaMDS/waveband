@@ -44,7 +44,8 @@ USUAL_FIGURES = ("dps", "share")
 # What the one line of text leaves out: where things are on this PC. The log folder's path can
 # hold the Windows user name, and the port is how this PC's browser reaches the meter. The
 # version last run is no setting: it is this PC's own record of which notes it has been shown.
-NOT_EXPORTED = ("log_dir", "port", "seen_version")
+# What draws the overlay is chosen for this PC's WebView2, which another PC's may not share.
+NOT_EXPORTED = ("log_dir", "port", "seen_version", "overlay_engine")
 _LINE_PREFIX = "wwmeter1:"
 _LINE_LIMIT = 40_000  # characters of a pasted line; a real one is under a thousand
 _JSON_LIMIT = 200_000  # bytes it may unpack to
@@ -226,6 +227,7 @@ def _checks(themes: list[str], languages: list[str]) -> dict:
         "overlay_zoom": lambda value: round(_number(*ZOOM)(value), 2),
         "only_over_game": _flag,
         "hide_from_capture": _flag,
+        "overlay_engine": _one_of("webview2", "qt"),
         "capture_tools": _capture_tools,
         "display_unit": _one_of("damage", "percent"),
         "theme": _one_of(*themes),
@@ -253,6 +255,7 @@ NAMES = {  # a setting, as a message about it calls it
     "overlay_zoom": "The meter's size",
     "only_over_game": "Showing only over the game",
     "hide_from_capture": "Hiding from screenshots",
+    "overlay_engine": "What draws the meter",
     "capture_tools": "The list of screenshot programs",
     "display_unit": "Damage or percent",
     "theme": "The theme",
@@ -394,6 +397,7 @@ def describe(
         "show_keys": bool(cfg.show_keys),
         "hide_between_fights": bool(cfg.hide_between_fights),
         "hide_from_capture": bool(cfg.hide_from_capture),
+        "overlay_engine": cfg.overlay_engine if cfg.overlay_engine in ("webview2", "qt") else "webview2",
         "only_over_game": bool(cfg.only_over_game),
         "check_updates": bool(cfg.check_updates),
         "auto_update": bool(cfg.auto_update),

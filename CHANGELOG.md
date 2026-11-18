@@ -2,6 +2,13 @@
 
 ## 0.3.2 (not released yet)
 
+- **The meter is drawn by WebView2**, the web view built into Windows 10 and 11, instead of a
+  copy of Chromium that came with Waveband. It looks and works as before: on top of the game,
+  clicks pass through it, hidden from screenshots if you choose, Alt+F11 to move and resize it.
+  If WebView2 is missing or won't start, Waveband uses the old overlay by itself. To go back to
+  it by hand: Settings, DPS Meter, "What draws the meter", then start Waveband again.
+- The tray icon's menu is Windows' own menu now, with the keybinds beside each entry as before.
+
 ## 0.3.1
 
 - **The keys work again: they are Alt+F7 to Alt+F11 now** (Alt+Shift+F7 and Alt+Shift+F8 for the

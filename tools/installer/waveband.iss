@@ -70,6 +70,12 @@ Name: "startup"; Description: "Start Waveband when Windows starts"; Flags: unche
 Type: filesandordirs; Name: "{app}\_internal"
 Type: filesandordirs; Name: "{app}\ui"
 Type: filesandordirs; Name: "{app}\source"
+Type: filesandordirs; Name: "{app}\lib"
+
+[UninstallDelete]
+; the cache of the web view that draws the overlay (made by wwmeter\overlay_webview2.py)
+Type: filesandordirs; Name: "{localappdata}\Waveband\WebView2"
+Type: dirifempty; Name: "{localappdata}\Waveband"
 
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion

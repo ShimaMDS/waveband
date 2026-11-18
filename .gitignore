@@ -37,3 +37,6 @@ assets/themes/
 
 # Logo concepts made locally by tools/make_logo.py
 assets/logo/concepts/
+
+# WebView2Loader.dll and its license, fetched by tools/make_webview2_com.py
+lib/
