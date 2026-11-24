@@ -94,7 +94,7 @@ in [How it works](docs/HOW-IT-WORKS.md#if-something-looks-wrong).
 ```powershell
 git clone https://github.com/ShimaMDS/waveband.git
 cd waveband
-run.bat                                        # sets up .venv on first run, then starts the meter
+run.bat                                        # sets up .venv and fetches WebView2's loader on first run, then starts the meter
 .venv\Scripts\python -m wwmeter run --demo     # a made-up fight, no game needed
 .venv\Scripts\python -m pip install -r requirements-dev.txt   # for the tests and tools\
 .venv\Scripts\python -m unittest discover -s tests

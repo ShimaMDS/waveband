@@ -28,6 +28,7 @@ LANGUAGE_LABELS = {
     "ru": "Русский", "id": "Bahasa Indonesia", "vi": "Tiếng Việt",
 }
 ZOOM = (0.6, 2.5)  # the meter's size, as the overlay window allows it
+FRAME_RATES = (60, 120)  # what the meter can move at; the first is the usual one
 # The figures a character's row can show: name, what the settings page calls it, and anything
 # the page should say beside it.
 FIGURES = (
@@ -101,8 +102,8 @@ class Refused(ValueError):
 
 
 def _fps(value) -> int:
-    if value not in (60, 120) or isinstance(value, bool):
-        raise Refused("has to be 60 or 120")
+    if isinstance(value, bool) or value not in FRAME_RATES:
+        raise Refused("has to be " + " or ".join(str(rate) for rate in FRAME_RATES))
     return int(value)
 
 
@@ -175,6 +176,14 @@ def row_figures(value) -> list[str]:
         return _row_figures(value)
     except Refused:
         return list(USUAL_FIGURES)
+
+
+def overlay_fps(value) -> int:
+    """The meter's frame rate as it runs: the usual one when the file holds nonsense."""
+    try:
+        return _fps(value)
+    except Refused:
+        return FRAME_RATES[0]
 
 
 def decimals(value, usual: int) -> int:
@@ -399,7 +408,7 @@ def describe(
         "themes": [{"name": name, "label": theme_label(name)} for name in themes],
         "display_unit": cfg.display_unit,
         "compact": bool(cfg.compact),
-        "overlay_fps": cfg.overlay_fps if cfg.overlay_fps in (60, 120) else 60,
+        "overlay_fps": overlay_fps(cfg.overlay_fps),
         "show_keys": bool(cfg.show_keys),
         "hide_between_fights": bool(cfg.hide_between_fights),
         "hide_from_capture": bool(cfg.hide_from_capture),

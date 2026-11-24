@@ -38,6 +38,7 @@ from .overlay_common import (
 from .settings import ZOOM, available_themes, theme_label
 
 LOADER = os.path.join(config_mod.ROOT, "lib", "webview2", "WebView2Loader.dll")
+RUNTIME_DOWNLOAD = "https://developer.microsoft.com/microsoft-edge/webview2/"
 
 
 class Unavailable(RuntimeError):
@@ -89,6 +90,8 @@ _user32.LoadCursorW.argtypes = [wintypes.HINSTANCE, ctypes.c_void_p]
 _user32.LoadCursorW.restype = wintypes.HANDLE
 _user32.SetCursor.argtypes = [wintypes.HANDLE]
 _user32.GetWindowRect.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.RECT)]
+_user32.ChangeWindowMessageFilterEx.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.DWORD, ctypes.c_void_p]
+_user32.CheckMenuRadioItem.argtypes = [wintypes.HMENU, wintypes.UINT, wintypes.UINT, wintypes.UINT, wintypes.UINT]
 _kernel32.GetModuleHandleW.restype = wintypes.HMODULE
 
 WS_POPUP = 0x80000000
@@ -112,6 +115,8 @@ WM_LBUTTONUP, WM_RBUTTONUP, WM_CONTEXTMENU = 0x0202, 0x0205, 0x007B
 HTCAPTION, HTTRANSPARENT = 2, -1
 IDC_SIZEALL = 32646
 WDA_NONE, WDA_EXCLUDEFROMCAPTURE = 0x0, 0x11
+MSGFLT_ALLOW = 1
+MF_BYCOMMAND = 0x0
 TIMER_FOLLOW, TIMER_SETTINGS, TIMER_RELOAD = 1, 2, 3
 RELOAD_AFTER = 2000  # ms before a page that would not load is asked for again
 CLASS_NAME = "WavebandOverlay"
@@ -217,7 +222,9 @@ def _com():
 
 def _loader():
     if not os.path.isfile(LOADER):
-        raise Unavailable(f"{LOADER} is missing")
+        # releases carry it; a git checkout gets it from run.bat or the tool named here
+        raise Unavailable(f"{LOADER} is missing; from source, run.bat or "
+                          "tools\\make_webview2_com.py --loader-only fetches it")
     try:
         return ctypes.WinDLL(LOADER)
     except OSError as error:
@@ -600,6 +607,9 @@ class Tray:
         self.icon = win32gui.LoadImage(0, _tray_icon_file(), win32con.IMAGE_ICON, size, size,
                                        win32con.LR_LOADFROMFILE)
         self.taskbar_created = win32gui.RegisterWindowMessage("TaskbarCreated")
+        # Explorer broadcasts it from a lower integrity level; while Waveband runs as
+        # administrator Windows drops it unless this window lets it in.
+        _user32.ChangeWindowMessageFilterEx(hwnd, self.taskbar_created, MSGFLT_ALLOW, None)
         self.add()
 
     def add(self) -> None:
@@ -671,6 +681,9 @@ def build_menu(items: list[Item]) -> tuple[int, dict[int, Callable[[], None]]]:
                 command = len(actions) + 1
                 actions[command] = item.action
                 gui.AppendMenu(menu, flags, command, text)
+                if item.radio and item.checked:
+                    # one of a group: a bullet instead of a tick
+                    _user32.CheckMenuRadioItem(int(menu), command, command, command, MF_BYCOMMAND)
         except Exception:
             gui.DestroyMenu(menu)  # and the submenus already in it
             raise

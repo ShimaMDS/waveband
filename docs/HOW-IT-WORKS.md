@@ -29,7 +29,8 @@ settings line).
 
 **Starting.** With the installer, start Waveband from the Start menu. With the zip, run
 `Waveband.exe`. From source, run `run.bat` (Python 3.11 or newer; the first start installs what
-`requirements.txt` lists). A tray icon appears, and the meter shows over the game whenever the
+`requirements.txt` lists and fetches WebView2's loader into `lib\webview2\`, which git doesn't
+hold). A tray icon appears, and the meter shows over the game whenever the
 game is in front. Quit from the tray icon. The game has to run in Borderless or Windowed mode:
 nothing can draw over exclusive fullscreen. Errors go to `waveband.log` beside the program.
 
@@ -425,7 +426,7 @@ Tools, run with `.venv\Scripts\python tools\<name>.py`:
 | `release_key.py` | The release signing key: make, lock, sign, verify |
 | `sign_release.bat` | Drag a release's `SHA256SUMS.txt` onto it: shows the file, asks for the key's passphrase, signs and checks the signature |
 | `test_exe.py <folder>` or `--source` | Smoke-test a built `Waveband.exe` (or the source): the self-test, then a demo with the overlay, quit as the tray menu quits it, and once more with 0.3.2-beta.1's Qt setting in the settings file |
-| `make_webview2_com.py` | Fetch Microsoft's WebView2 SDK (pinned, hash-checked): its loader into `lib\webview2\`, and `wwmeter\webview2_com.py` written from its `WebView2.h`. Run once after cloning |
+| `make_webview2_com.py` | Fetch Microsoft's WebView2 SDK (pinned, hash-checked): its loader into `lib\webview2\`, and `wwmeter\webview2_com.py` written from its `WebView2.h`. `--loader-only` fetches just the loader (`run.bat` does that when it's missing); without it, only to move to another SDK version |
 | `webview2_overlay.py` | Check the WebView2 overlay on this PC against a running meter: transparency, clicks passing, move mode, out of screenshots, memory |
 | `render_page.py`, `drive_page.py` | Render or script a page of a running meter, to check the look and the controls without the game; `settings_walk.js` is the `drive_page.py` script that uses every control of the settings page (against a demo meter with settings of its own) |
 | `screenshots.py` | Take the README's pictures from the demo meter |

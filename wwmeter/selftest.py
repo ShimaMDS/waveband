@@ -117,7 +117,7 @@ def _checks(cfg: config.Config):
             return f"drawn by WebView2 Runtime {overlay_webview2.runtime_version()}"
         except overlay_webview2.Unavailable as why:
             raise RuntimeError(f"{why}. The meter is drawn by Microsoft Edge WebView2: install the "
-                               "WebView2 Runtime from https://developer.microsoft.com/microsoft-edge/webview2/") from why
+                               f"WebView2 Runtime from {overlay_webview2.RUNTIME_DOWNLOAD}") from why
 
     def keys():
         chosen = hotkeys.bindings(cfg.hotkeys)
