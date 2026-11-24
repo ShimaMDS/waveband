@@ -38,7 +38,10 @@ nothing can draw over exclusive fullscreen. Errors go to `waveband.log` beside t
 web view Windows 10 and 11 already have. Up to 0.3.1 Qt's own copy of Chromium drew it, which made
 the download three times the size; since 0.3.2 there is no Qt in Waveband. Without WebView2
 Waveband says so in a message and stops (the self-test's "overlay window" line says the same).
-WebView2 keeps a cache in `%LOCALAPPDATA%\Waveband\WebView2`; the uninstaller deletes it.
+WebView2 draws from processes of its own ("Microsoft Edge WebView2" in Task Manager). If one ends
+while Waveband runs (ended in Task Manager, a crash, low memory), the meter starts it again and
+loads its page; if the browser process ends more than three times in a minute, Waveband says so
+and stops. WebView2 keeps a cache in `%LOCALAPPDATA%\Waveband\WebView2`; the uninstaller deletes it.
 
 **Keys.** They work only while the game is in front, so they stay free everywhere else. The game
 itself uses F1 to F6.
@@ -69,8 +72,9 @@ in use by another program"), and you can pick another key in Settings.
 **The tray menu** is kept short: copying the fight's summary, earlier sessions, hiding between
 fights and from screenshots, the line of keys, the theme, the dashboard and Settings in your
 browser, and Waveband's updates. Everything else has a key or is in the dashboard; moving the
-meter is in the menu too while it has no key. The dashboard has three pages: Fights, Settings
-and What changed.
+meter is in the menu too while its key doesn't work: none set, one another program holds, or
+one without Ctrl or Alt while the game runs as administrator. The dashboard has three pages:
+Fights, Settings and What changed.
 
 **Sessions and earlier fights.** Each start of Waveband is a session. Finished fights are saved
 as they end, one file per session in the `sessions` folder (`sessions\2026-11-15_16-30-05.json`),
@@ -356,7 +360,10 @@ needs a restart and no file has to be opened.
 Settings are kept in `config.json` beside the program, written the first time one changes; the
 fields and defaults are in `wwmeter\config.py`. A few are only there, for hand editing with
 Waveband closed: `port`, `capture_backend`, `capture_fps`, `capture_tools`, `read_numbers`,
-`encounter_timeout` and `boss_bar`. The log folder is found automatically: in Steam's libraries
+`encounter_timeout` and `boss_bar`. The meter's place (`overlay_x`, `overlay_y`) is in screen
+pixels; a file from 0.3.1 or before has it in Qt's scaled pixels, and the first start of 0.3.2
+turns it into screen pixels once (`overlay_pixels` records that), so on a display scaled above
+100% the meter stays where it was. The log folder is found automatically: in Steam's libraries
 and the usual install folders on every drive, taking the install whose log was written last.
 
 **Who can reach the dashboard.** The server listens on `127.0.0.1` only, so nothing off this PC
@@ -427,7 +434,7 @@ Tools, run with `.venv\Scripts\python tools\<name>.py`:
 | `sign_release.bat` | Drag a release's `SHA256SUMS.txt` onto it: shows the file, asks for the key's passphrase, signs and checks the signature |
 | `test_exe.py <folder>` or `--source` | Smoke-test a built `Waveband.exe` (or the source): the self-test, then a demo with the overlay, quit as the tray menu quits it, and once more with 0.3.2-beta.1's Qt setting in the settings file |
 | `make_webview2_com.py` | Fetch Microsoft's WebView2 SDK (pinned, hash-checked): its loader into `lib\webview2\`, and `wwmeter\webview2_com.py` written from its `WebView2.h`. `--loader-only` fetches just the loader (`run.bat` does that when it's missing); without it, only to move to another SDK version |
-| `webview2_overlay.py` | Check the WebView2 overlay on this PC against a running meter: transparency, clicks passing, move mode, out of screenshots, memory |
+| `webview2_overlay.py` | Check the WebView2 overlay on this PC against a running meter (`--url` for one on another port): transparency, clicks passing, move mode, coming back after WebView2's browser process is ended, out of screenshots, memory |
 | `render_page.py`, `drive_page.py` | Render or script a page of a running meter, to check the look and the controls without the game; `settings_walk.js` is the `drive_page.py` script that uses every control of the settings page (against a demo meter with settings of its own) |
 | `screenshots.py` | Take the README's pictures from the demo meter |
 | `memory_steps.py [page]` | Load the meter's parts one after another and say how much memory each adds (commit and working set), ending with the overlay page of a running meter |

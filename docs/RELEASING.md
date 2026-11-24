@@ -25,7 +25,10 @@ to hold before one goes out.
    `ui\`, WebView2's loader and its licence (`lib\webview2\`), the data files (the boss HP tables, names, characters, part shares and the text
    reader's model in `data\ocr`), the guide, `README.md`, `CHANGELOG.md`, the `docs\` folder,
    `selftest.bat`, `LICENSE` and the source (only what git keeps: the build has to run in a
-   clone, and a file never committed stays out), and zips it. Then it compiles the installer,
+   clone, and a file never committed stays out), and zips it. It stops before PyInstaller when
+   anything it ships (`wwmeter\`, `tools\`, `ui\`, `requirements.txt`, `run.bat`) differs from
+   the commit, so the exe and its source are the same code; an `--unsigned` test build only
+   says so. Then it compiles the installer,
    `Waveband-<version>-setup.exe`, from `tools\installer\waveband.iss` with Inno Setup 6.7 or
    newer (`winget install JRSoftware.InnoSetup`; it is found where that puts it, or give
    `--iscc`), writes `SHA256SUMS.txt` with the SHA-256 of the zip and the setup, and signs that

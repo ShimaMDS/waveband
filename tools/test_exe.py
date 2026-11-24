@@ -74,7 +74,9 @@ def run_demo(command: list[str], label: str, picture: str, extra: dict | None = 
     y = win32api.GetSystemMetrics(1) - height - 80
     handle, settings = tempfile.mkstemp(suffix=".json")
     with os.fdopen(handle, "w") as fh:
-        json.dump({"port": _PORT, "only_over_game": False, "overlay_x": x, "overlay_y": y, **(extra or {})}, fh)
+        # in screen pixels: a place in a file that doesn't say so is taken for 0.3.1's Qt pixels
+        json.dump({"port": _PORT, "only_over_game": False, "overlay_x": x, "overlay_y": y,
+                   "overlay_pixels": "screen", **(extra or {})}, fh)
     # A WebView2 data folder of its own (Waveband keeps it under LOCALAPPDATA): with the shared
     # one, a Waveband already running here lends its web view processes to this run, and they are
     # not this run's to find or to see closed (seen 2026-11-19)

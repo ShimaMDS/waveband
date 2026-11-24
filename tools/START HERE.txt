@@ -70,7 +70,8 @@ character's row shows) and Waveband's updates.
 
 If the meter says a key "is in use by another program", that program got
 the key first and it does nothing in the meter: give the action another key
-(below) or use the tray menu.
+(below) or use the tray menu. If it's the move key, the tray menu lists
+"Move or resize the overlay" until the key works.
 To change a key, pick "Settings: keybinds, colours, log folder" in the tray
 icon's menu. A page opens in your browser: click the keybind, then press the
 key you want. The same page has the element colours, the language of the

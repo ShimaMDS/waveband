@@ -9,6 +9,7 @@ one, then reads the screen and the window:
 - transparent: the pixels around the meter's card stay exactly magenta, the card is drawn;
 - clicks pass through: the window under a point on the card is not the overlay;
 - move mode: the overlay takes the mouse, the page gets its dashed outline, scrolling resizes;
+- back after WebView2's browser process is ended (as Task Manager would): the page loads again;
 - hidden from screenshots: with that on, a grab is all magenta.
 
 It also reports the memory of this process and of the WebView2 processes it started. The
@@ -72,6 +73,14 @@ def pump(seconds: float, until=lambda: False) -> bool:
     return False
 
 
+def webview2_browsers() -> list[int]:
+    """The msedgewebview2 browser processes this process started (their children are the rest)."""
+    script = ("Get-CimInstance Win32_Process -Filter \"Name='msedgewebview2.exe'\" | "
+              "Where-Object { $_.ParentProcessId -eq %d } | ForEach-Object { $_.ProcessId }") % os.getpid()
+    out = subprocess.run(["powershell", "-NoProfile", "-Command", script], capture_output=True, text=True).stdout
+    return [int(line) for line in out.split() if line.isdigit()]
+
+
 def memory_report() -> str:
     """Private bytes of this process and of the msedgewebview2 processes under it."""
     script = (
@@ -104,9 +113,16 @@ def main() -> int:
     x = user32.GetSystemMetrics(0) - width - 40
     y = user32.GetSystemMetrics(1) - height - 80
     cfg.overlay_x, cfg.overlay_y, cfg.overlay_zoom = x, y, 1.0
+    cfg.overlay_pixels = "screen"  # else a settings file from 0.3.1 would have this place converted
     cfg.hide_from_capture = False
+    # shown without the game: else leaving move mode hides it a second later (no game in front),
+    # and the checks after it would look at a hidden window (found 2026-11-24)
+    cfg.only_over_game = False
     shots = os.path.join(ROOT, "TMP", "webview2")
     os.makedirs(shots, exist_ok=True)
+    # WebView2's data of its own: with Waveband's, a running Waveband would lend this its browser
+    # process, and the memory and the browser-ending check would be about that one
+    ov.data_folder = lambda: os.path.join(shots, "data")
 
     backdrop(x, y, width, height)
     failed: list[str] = []
@@ -171,6 +187,19 @@ def main() -> int:
         outlined = page("document.body.classList.contains('moving')")
         results.append(("locked again", hit != window.hwnd and outlined == "false",
                         f"clicks pass: {hit != window.hwnd}, outline: {outlined}"))
+
+        # WebView2's browser process ending (Task Manager, a crash, low memory): the overlay
+        # starts it again and the page comes back
+        browsers = webview2_browsers()
+        before = len(loaded)
+        for pid in browsers:
+            subprocess.run(["taskkill", "/F", "/PID", str(pid)], capture_output=True)
+        again = pump(30, lambda: len(loaded) > before or bool(failed))
+        pump(2.5)
+        card = 1 - magenta(grab("overlay-restarted.png").crop((10, 10, 200, 120)))
+        results.append(("back after WebView2's browser ended", bool(browsers) and again and not failed and card > 0.5,
+                        f"ended {browsers or 'none found'}, page loaded again: {again and not failed}, "
+                        f"{card:.0%} of the card's top left drawn"))
 
         window.set_hidden_from_capture(True)
         excluded = magenta(grab("overlay-excluded.png"))
