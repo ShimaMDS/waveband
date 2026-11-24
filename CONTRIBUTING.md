@@ -20,9 +20,8 @@ screen resolution, and what the meter showed against what you expected.
 ```powershell
 git clone https://github.com/ShimaMDS/waveband.git
 cd waveband
-run.bat                                                       # sets up .venv, starts the meter
+run.bat                                                       # sets up .venv, fetches WebView2's loader, starts the meter
 .venv\Scripts\python -m pip install -r requirements-dev.txt   # for the tests and tools\
-.venv\Scripts\python tools\make_webview2_com.py               # WebView2's loader: the overlay needs it
 .venv\Scripts\python -m wwmeter run --demo                    # a made-up fight, no game needed
 ```
 

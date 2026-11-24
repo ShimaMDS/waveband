@@ -11,22 +11,6 @@ from dataclasses import asdict
 from . import __version__, changelog, clipboard, elevation, hotkeys, selfupdate, sessions, settings, update
 from . import config as config_mod
 from .capture import find_game_window
-
-WEBVIEW2_DOWNLOAD = "https://developer.microsoft.com/microsoft-edge/webview2/"
-
-
-def _no_overlay_box(reasons: list[str]) -> None:
-    """A Windows message saying the meter can't be shown, and why."""
-    import ctypes
-
-    text = (
-        "Waveband can't show its meter on this PC, so it has stopped.\n\n"
-        + "\n".join(reasons)
-        + "\n\nThe meter is drawn by Microsoft Edge WebView2, part of Windows 10 and 11. If it "
-        f"is missing, install the WebView2 Runtime from {WEBVIEW2_DOWNLOAD} and start Waveband "
-        "again. Waveband self-test (Start menu) or selftest.bat says more."
-    )
-    ctypes.windll.user32.MessageBoxW(None, text, config_mod.NAME, 0x10 | 0x40000)  # error, topmost
 from .config import ROOT, Config
 from .gamedata import LEARNED_PARTS_PATH, PartShares, apply_language, client_language, enemy_data
 from .summary import fight_summary
@@ -35,6 +19,22 @@ from .server import StateServer
 from .tracker import Tracker
 
 UI_DIR = os.path.join(ROOT, "ui")
+
+
+def _no_overlay_box(reasons: list[str]) -> None:
+    """A Windows message saying the meter can't be shown, and why."""
+    import ctypes
+
+    from .overlay_webview2 import RUNTIME_DOWNLOAD
+
+    text = (
+        "Waveband can't show its meter on this PC, so it has stopped.\n\n"
+        + "\n".join(reasons)
+        + "\n\nThe meter is drawn by Microsoft Edge WebView2, part of Windows 10 and 11. If it "
+        f"is missing, install the WebView2 Runtime from {RUNTIME_DOWNLOAD} and start Waveband "
+        "again. Waveband self-test (Start menu) or selftest.bat says more."
+    )
+    ctypes.windll.user32.MessageBoxW(None, text, config_mod.NAME, 0x10 | 0x40000)  # error, topmost
 
 
 def run(cfg: Config, demo: bool = False, overlay: bool = True) -> int:
@@ -340,7 +340,7 @@ def run(cfg: Config, demo: bool = False, overlay: bool = True) -> int:
             "compact": cfg.compact,
             "hide_between_fights": cfg.hide_between_fights,
             # frames a second the bars and the figure move at
-            "fps": cfg.overlay_fps if cfg.overlay_fps in (60, 120) else 60,
+            "fps": settings.overlay_fps(cfg.overlay_fps),
             # what a character's row shows, and how finely
             "figures": settings.row_figures(cfg.row_figures),
             "decimals": [settings.decimals(cfg.figure_decimals, 2), settings.decimals(cfg.share_decimals, 0)],
@@ -395,7 +395,8 @@ def run(cfg: Config, demo: bool = False, overlay: bool = True) -> int:
             from . import overlay_webview2
 
             try:
-                return overlay_webview2.run(*args, app_actions=app_actions)
+                return overlay_webview2.run(*args, app_actions=app_actions,
+                                            keys_need_ctrl_or_alt=keys_need_ctrl_or_alt)
             except overlay_webview2.Unavailable as why:
                 reason = f"WebView2 can't show the overlay ({why})"
             except Exception as fault:  # noqa: BLE001 - said below, then the meter stops cleanly

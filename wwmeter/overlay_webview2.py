@@ -32,12 +32,13 @@ from . import config as config_mod
 from . import hotkeys as hotkey_names
 from .capture import set_dpi_aware
 from .overlay_common import (
-    BASE_SIZE, HIDE_AFTER, Controls, HotkeySet, Item, default_position, game_in_front, move_script,
-    on_a_screen,
+    BASE_SIZE, HIDE_AFTER, Controls, HotkeySet, Item, default_position, from_qt_pixels, game_in_front,
+    move_script, on_a_screen,
 )
 from .settings import ZOOM, available_themes, theme_label
 
 LOADER = os.path.join(config_mod.ROOT, "lib", "webview2", "WebView2Loader.dll")
+RUNTIME_DOWNLOAD = "https://developer.microsoft.com/microsoft-edge/webview2/"
 
 
 class Unavailable(RuntimeError):
@@ -89,6 +90,8 @@ _user32.LoadCursorW.argtypes = [wintypes.HINSTANCE, ctypes.c_void_p]
 _user32.LoadCursorW.restype = wintypes.HANDLE
 _user32.SetCursor.argtypes = [wintypes.HANDLE]
 _user32.GetWindowRect.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.RECT)]
+_user32.ChangeWindowMessageFilterEx.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.DWORD, ctypes.c_void_p]
+_user32.CheckMenuRadioItem.argtypes = [wintypes.HMENU, wintypes.UINT, wintypes.UINT, wintypes.UINT, wintypes.UINT]
 _kernel32.GetModuleHandleW.restype = wintypes.HMODULE
 
 WS_POPUP = 0x80000000
@@ -112,8 +115,14 @@ WM_LBUTTONUP, WM_RBUTTONUP, WM_CONTEXTMENU = 0x0202, 0x0205, 0x007B
 HTCAPTION, HTTRANSPARENT = 2, -1
 IDC_SIZEALL = 32646
 WDA_NONE, WDA_EXCLUDEFROMCAPTURE = 0x0, 0x11
-TIMER_FOLLOW, TIMER_SETTINGS, TIMER_RELOAD = 1, 2, 3
+MSGFLT_ALLOW = 1
+MF_BYCOMMAND = 0x0
+TIMER_FOLLOW, TIMER_SETTINGS, TIMER_RELOAD, TIMER_RESTART = 1, 2, 3, 4
 RELOAD_AFTER = 2000  # ms before a page that would not load is asked for again
+RESTART_AFTER = 500  # ms before WebView2 is started again after its browser process ended
+RESTARTS_A_MINUTE = 3  # more than this and it is said and the meter stops
+# ICoreWebView2ProcessFailedEventArgs.ProcessFailedKind (COREWEBVIEW2_PROCESS_FAILED_KIND)
+PROCESS_FAILED_BROWSER, PROCESS_FAILED_RENDERER, PROCESS_FAILED_UNRESPONSIVE = 0, 1, 2
 CLASS_NAME = "WavebandOverlay"
 
 
@@ -217,7 +226,9 @@ def _com():
 
 def _loader():
     if not os.path.isfile(LOADER):
-        raise Unavailable(f"{LOADER} is missing")
+        # releases carry it; a git checkout gets it from run.bat or the tool named here
+        raise Unavailable(f"{LOADER} is missing; from source, run.bat or "
+                          "tools\\make_webview2_com.py --loader-only fetches it")
     try:
         return ctypes.WinDLL(LOADER)
     except OSError as error:
@@ -246,6 +257,24 @@ def data_folder() -> str:
     return os.path.join(base, config_mod.NAME, "WebView2")
 
 
+def _take_up_qt_place(cfg: config_mod.Config) -> None:
+    """The meter's place as 0.3.1 and before saved it (Qt's scaled pixels) in screen pixels,
+    once, so on a scaled display it comes up where the user put it."""
+    if cfg.overlay_pixels == "screen":
+        return
+    if isinstance(cfg.overlay_x, int) and isinstance(cfg.overlay_y, int):
+        before = (cfg.overlay_x, cfg.overlay_y)
+        cfg.overlay_x, cfg.overlay_y = from_qt_pixels(*before)
+        if (cfg.overlay_x, cfg.overlay_y) != before:
+            print(f"the meter's place from before 0.3.2, {before}, is {cfg.overlay_x, cfg.overlay_y} "
+                  "in screen pixels", flush=True)
+    cfg.overlay_pixels = "screen"
+    try:
+        config_mod.save(cfg)
+    except OSError:
+        traceback.print_exc()  # converted again next start; the meter is placed right either way
+
+
 # -- the overlay window ---------------------------------------------------------------------------
 
 class OverlayWindow:
@@ -262,11 +291,13 @@ class OverlayWindow:
         self._visible = False
         self._last_in_front = time.monotonic()
         self._zoom = self._zoom_wanted()
+        _take_up_qt_place(cfg)
         self._placed = (cfg.overlay_x, cfg.overlay_y, cfg.overlay_zoom)
         self._hidden_from_capture = bool(cfg.hide_from_capture)
         self._controller = None
         self._webview = None
         self._keep: list = []  # handlers WebView2 holds on to
+        self._restarts: list[float] = []  # when WebView2 was started again, the last minute
 
         self.hwnd = None
         self._wv, self._handler, self._IUnknown, desktop_device, visual_type = _com()
@@ -372,6 +403,9 @@ class OverlayWindow:
         loaded = self._handler(wv.ICoreWebView2NavigationCompletedEventHandler, self._on_loaded)
         self._keep.append(loaded)
         webview.add_NavigationCompleted(loaded)
+        died = self._handler(wv.ICoreWebView2ProcessFailedEventHandler, self._on_process_failed)
+        self._keep.append(died)
+        webview.add_ProcessFailed(died)
         self._script_done = self._handler(wv.ICoreWebView2ExecuteScriptCompletedHandler, lambda *_: None)
         webview.Navigate(self._url)
         self._device.Commit()
@@ -382,6 +416,40 @@ class OverlayWindow:
             _user32.SetTimer(self.hwnd, TIMER_RELOAD, RELOAD_AFTER, None)
             return
         self._run_script(move_script(self._cfg, self.moving))
+
+    def _on_process_failed(self, _sender, args) -> None:
+        """WebView2 draws from processes of its own (msedgewebview2.exe), which can end on their
+        own: ended in Task Manager, a crash, low memory. Without this the meter would stay empty
+        for the rest of the session with nothing saying why."""
+        kind = args.get_ProcessFailedKind()
+        if kind == PROCESS_FAILED_BROWSER:
+            # the view is gone with it: a new browser, view and page, from the message loop
+            print("WebView2's browser process ended; starting it again", flush=True)
+            self._webview = None
+            _user32.SetTimer(self.hwnd, TIMER_RESTART, RESTART_AFTER, None)
+        elif kind in (PROCESS_FAILED_RENDERER, PROCESS_FAILED_UNRESPONSIVE):
+            print(f"the overlay page's process {'ended' if kind == PROCESS_FAILED_RENDERER else 'hung'}; "
+                  "loading the page again", flush=True)
+            if self._webview is not None:
+                self._webview.Reload()
+        else:
+            print(f"a WebView2 helper process ended (kind {kind}); WebView2 starts it again", flush=True)
+
+    def _restart_webview(self) -> None:
+        now = time.monotonic()
+        self._restarts = [t for t in self._restarts if now - t < 60] + [now]
+        if len(self._restarts) > RESTARTS_A_MINUTE:
+            # it keeps ending as soon as it starts: say so and stop, rather than loop unseen
+            self._on_failed("WebView2's browser process keeps ending")
+            return
+        if self._controller is not None:
+            try:
+                self._controller.Close()
+            except Exception:  # noqa: BLE001 - its browser is gone; nothing left to close
+                pass
+        self._controller = self._webview = self._composition = self._environment = None
+        self._keep = []
+        self._start_webview()  # the environment, then the view and the page, as at the start
 
     def _run_script(self, script: str) -> None:
         if self._webview is not None:
@@ -526,6 +594,14 @@ class OverlayWindow:
                 if self._webview is not None:
                     self._webview.Navigate(self._url)
                 return 0
+            if msg == WM_TIMER and wparam == TIMER_RESTART:
+                _user32.KillTimer(hwnd, TIMER_RESTART)
+                try:
+                    self._restart_webview()
+                except Exception as fault:  # noqa: BLE001 - no view and no way to make one: say so
+                    traceback.print_exc()
+                    self._on_failed(f"WebView2 would not start again ({fault!r})")
+                return 0
             if msg == WM_DPICHANGED:
                 self._size_window()
                 self._apply_scale()
@@ -555,6 +631,7 @@ class OverlayWindow:
             _user32.KillTimer(hwnd, TIMER_FOLLOW)
             _user32.KillTimer(hwnd, TIMER_SETTINGS)
             _user32.KillTimer(hwnd, TIMER_RELOAD)
+            _user32.KillTimer(hwnd, TIMER_RESTART)
             _user32.DestroyWindow(hwnd)  # its WM_DESTROY still reaches this window's procedure
             _WINDOWS.pop(hwnd, None)
 
@@ -600,6 +677,11 @@ class Tray:
         self.icon = win32gui.LoadImage(0, _tray_icon_file(), win32con.IMAGE_ICON, size, size,
                                        win32con.LR_LOADFROMFILE)
         self.taskbar_created = win32gui.RegisterWindowMessage("TaskbarCreated")
+        # Explorer broadcasts it from a lower integrity level. Measured 2026-11-24 (Windows 10,
+        # Waveband as administrator): a window that already has an icon by the clock gets it
+        # anyway, one without (its icon couldn't be added: Waveband started before Explorer
+        # did) doesn't, unless the window lets it in.
+        _user32.ChangeWindowMessageFilterEx(hwnd, self.taskbar_created, MSGFLT_ALLOW, None)
         self.add()
 
     def add(self) -> None:
@@ -671,6 +753,9 @@ def build_menu(items: list[Item]) -> tuple[int, dict[int, Callable[[], None]]]:
                 command = len(actions) + 1
                 actions[command] = item.action
                 gui.AppendMenu(menu, flags, command, text)
+                if item.radio and item.checked:
+                    # one of a group: a bullet instead of a tick
+                    _user32.CheckMenuRadioItem(int(menu), command, command, command, MF_BYCOMMAND)
         except Exception:
             gui.DestroyMenu(menu)  # and the submenus already in it
             raise
@@ -690,13 +775,16 @@ def run(
     open_session: Callable[[str | None], None] | None = None,
     update_finished: Callable[[], str | None] | None = None,
     app_actions: dict | None = None,
+    keys_need_ctrl_or_alt: Callable[[], bool] | None = None,
 ) -> int:
     """Show the overlay and block until the user quits from the tray menu. ``on_view`` steps to
     the fight before (-1) or after (+1) the one on show, ``on_copy`` puts its summary on the
     clipboard, ``on_keys_taken`` is told which hotkeys another program is holding,
     ``list_sessions`` gives the earlier sessions and ``open_session`` puts one on show (None:
     back to this one); ``update_finished`` gives, once, what the last update of the boss HP
-    tables ended with. Raises Unavailable when WebView2 can't be used here."""
+    tables ended with; ``keys_need_ctrl_or_alt`` says whether a key held without them would
+    not reach the meter (the game runs as administrator and Waveband does not). Raises
+    Unavailable when WebView2 can't be used here."""
     set_dpi_aware()
     runtime_version()  # no runtime: say so now, before a window or a tray icon exists
     failed: list[str] = []
@@ -717,11 +805,18 @@ def run(
         def quit_app() -> None:  # from any thread (the updater's too)
             _user32.PostMessageW(hwnd, WM_CLOSE, 0, 0)
 
+        def key_works(name: str) -> bool:
+            if hotkeys is not None and name in hotkeys.refused:
+                return False  # another program holds it
+            blocked = keys_need_ctrl_or_alt is not None and keys_need_ctrl_or_alt()
+            return not (blocked and hotkey_names.needs_ctrl_or_alt(name))
+
         controls = Controls(
             cfg=cfg, overlay=window, notify=tray.notify, quit=quit_app, on_reset=on_reset,
             dashboard_url=dashboard_url, on_view=on_view, on_copy=on_copy, list_sessions=list_sessions,
             open_session=open_session, update_finished=update_finished,
             app_actions=app_actions, themes=available_themes, theme_label=theme_label,
+            key_works=key_works,
         )
         if app_actions is not None:
             app_actions["set_quit"](quit_app)

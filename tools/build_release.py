@@ -199,14 +199,33 @@ def tracked(folder: str) -> list[str]:
     return sorted(name for name in names if "/" not in name)
 
 
+def uncommitted() -> list[str]:
+    """What git keeps that this folder has changed since the last commit (edited, deleted, added
+    but not committed), among what goes into the release: Waveband.exe is built from the folder
+    as it is, and its source from git's list of files."""
+    out = subprocess.run(["git", "status", "--porcelain=v1", "-z", "--untracked-files=no", "--",
+                          "wwmeter", "tools", "ui", *SOURCE_FILES],
+                         cwd=ROOT, capture_output=True, check=True)
+    entries = iter(out.stdout.decode("utf-8").split("\0"))
+    changed = []
+    for entry in entries:
+        if len(entry) > 3:
+            changed.append(entry[3:])
+            if entry[0] in "RC":
+                next(entries, None)  # a rename or copy is followed by the name it had
+    return sorted(changed)
+
+
 def copy_python(source: str, target: str) -> None:
     """The Python files of a folder that git keeps, and the steps file drive_page.py is run with.
     Only what git keeps: the source in a release is what was committed, never a file that lies in
     the folder on the PC that built it (seen 2026-11-19: tools\\make_nexus_images.py, held back
-    from the repository, went into a build made from the working folder)."""
+    from the repository, went into a build made from the working folder). A release build stops
+    first when the folder differs from the commit (``uncommitted``); a test build may, and then
+    a file deleted here but not yet in git is left out rather than ending the build."""
     os.makedirs(target, exist_ok=True)
     for name in tracked(source):
-        if name.endswith((".py", ".js")):
+        if name.endswith((".py", ".js")) and os.path.isfile(os.path.join(source, name)):
             shutil.copy2(os.path.join(source, name), os.path.join(target, name))
 
 
@@ -236,6 +255,15 @@ def main(argv: list[str] | None = None) -> int:
         print("Build from a git checkout: the source in the release is what git keeps, and git can't "
               "say here (no git, or this folder isn't a clone).")
         return 1
+    changed = uncommitted()
+    if changed:
+        # said before PyInstaller's minutes, not after
+        listed = ", ".join(changed[:8]) + (f" and {len(changed) - 8} more" if len(changed) > 8 else "")
+        if not args.unsigned:
+            print(f"Not committed: {listed}. A release is built from a commit, so its exe and its "
+                  "source are the same code: commit (or put back) these first.")
+            return 1
+        print(f"A test build with changes not committed: {listed}.")
     missing = [f for f in WEBVIEW2_FILES if not os.path.isfile(os.path.join(ROOT, "lib", "webview2", f))]
     if missing:
         print(f"Missing from lib\\webview2\\: {missing}. Run tools\\make_webview2_com.py first.")

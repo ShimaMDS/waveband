@@ -109,6 +109,10 @@ class Config:
     overlay_x: int | None = None
     overlay_y: int | None = None
     overlay_zoom: float = 1.0
+    # What x/y are counted in: "screen", pixels as Windows counts them (0.3.2 on), or "qt", Qt's
+    # scaled pixels, in files 0.3.1 and before wrote; the overlay turns those into screen pixels
+    # once (overlay_common.from_qt_pixels), so the meter stays where it was on a scaled display.
+    overlay_pixels: str = "screen"
     # Show the overlay only while the game is the foreground window.
     only_over_game: bool = True
     # True keeps the overlay out of screenshots, streams and recordings. On Windows 10 that makes
@@ -200,7 +204,17 @@ def load() -> Config:
         # a file written by an earlier version lacks the actions added since: list them, with
         # their default keys, so the next save shows every key that can be changed
         cfg.hotkeys = with_new_actions(cfg.hotkeys)
+    if "overlay_pixels" not in data and not _ran_webview2(data.get("seen_version")):
+        cfg.overlay_pixels = "qt"  # placed by 0.3.1 or before, whose Qt overlay scaled them
     return cfg
+
+
+def _ran_webview2(seen) -> bool:
+    """Whether the version that last ran with a settings file was 0.3.2 or later: its overlay,
+    WebView2's, saved the meter's place in screen pixels (and wrote no overlay_pixels before
+    0.3.2-beta.3)."""
+    found = re.match(r"(\d+)\.(\d+)\.(\d+)", seen) if isinstance(seen, str) else None
+    return found is not None and tuple(int(n) for n in found.groups()) >= (0, 3, 2)
 
 
 _saving = threading.Lock()  # the tray menu, the hotkeys and the settings page all save

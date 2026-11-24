@@ -72,6 +72,14 @@ class ICoreWebView2NavigationCompletedEventHandler(IUnknown):
 class ICoreWebView2NavigationCompletedEventArgs(IUnknown):
     _iid_ = GUID("{30D68B7D-20D9-4752-A9CA-EC8448FBB5C1}")
 
+
+class ICoreWebView2ProcessFailedEventHandler(IUnknown):
+    _iid_ = GUID("{79E0AEA4-990B-42D9-AA1D-0FCC2E5BC7F1}")
+
+
+class ICoreWebView2ProcessFailedEventArgs(IUnknown):
+    _iid_ = GUID("{8155A9A4-1474-4A86-8CAE-151B0FA6B8CA}")
+
 ICoreWebView2Environment._methods_ = [
     COMMETHOD([], HRESULT, 'CreateCoreWebView2Controller', (['in'], wintypes.HWND, 'parentWindow'), (['in'], ctypes.c_void_p, 'handler')),
     COMMETHOD([], HRESULT, 'CreateWebResourceResponse', (['in'], ctypes.c_void_p, 'content'), (['in'], ctypes.c_int, 'statusCode'), (['in'], wintypes.LPCWSTR, 'reasonPhrase'), (['in'], wintypes.LPCWSTR, 'headers'), (['out', 'retval'], ctypes.POINTER(ctypes.c_void_p), 'response')),
@@ -164,7 +172,7 @@ ICoreWebView2._methods_ = [
     COMMETHOD([], HRESULT, 'remove_ScriptDialogOpening', (['in'], EventRegistrationToken, 'token')),
     COMMETHOD([], HRESULT, 'add_PermissionRequested', (['in'], ctypes.c_void_p, 'eventHandler'), (['out'], ctypes.POINTER(EventRegistrationToken), 'token')),
     COMMETHOD([], HRESULT, 'remove_PermissionRequested', (['in'], EventRegistrationToken, 'token')),
-    COMMETHOD([], HRESULT, 'add_ProcessFailed', (['in'], ctypes.c_void_p, 'eventHandler'), (['out'], ctypes.POINTER(EventRegistrationToken), 'token')),
+    COMMETHOD([], HRESULT, 'add_ProcessFailed', (['in'], ctypes.POINTER(ICoreWebView2ProcessFailedEventHandler), 'eventHandler'), (['out'], ctypes.POINTER(EventRegistrationToken), 'token')),
     COMMETHOD([], HRESULT, 'remove_ProcessFailed', (['in'], EventRegistrationToken, 'token')),
     COMMETHOD([], HRESULT, 'AddScriptToExecuteOnDocumentCreated', (['in'], wintypes.LPCWSTR, 'javaScript'), (['in'], ctypes.c_void_p, 'handler')),
     COMMETHOD([], HRESULT, 'RemoveScriptToExecuteOnDocumentCreated', (['in'], wintypes.LPCWSTR, 'id')),
@@ -231,4 +239,10 @@ ICoreWebView2NavigationCompletedEventArgs._methods_ = [
     COMMETHOD([], HRESULT, 'get_IsSuccess', (['out', 'retval'], ctypes.POINTER(wintypes.BOOL), 'isSuccess')),
     COMMETHOD([], HRESULT, 'get_WebErrorStatus', (['out', 'retval'], ctypes.POINTER(ctypes.c_int), 'webErrorStatus')),
     COMMETHOD([], HRESULT, 'get_NavigationId', (['out', 'retval'], ctypes.POINTER(ctypes.c_uint64), 'navigationId')),
+]
+ICoreWebView2ProcessFailedEventHandler._methods_ = [
+    COMMETHOD([], HRESULT, 'Invoke', (['in'], ctypes.POINTER(ICoreWebView2), 'sender'), (['in'], ctypes.POINTER(ICoreWebView2ProcessFailedEventArgs), 'args')),
+]
+ICoreWebView2ProcessFailedEventArgs._methods_ = [
+    COMMETHOD([], HRESULT, 'get_ProcessFailedKind', (['out', 'retval'], ctypes.POINTER(ctypes.c_int), 'value')),
 ]

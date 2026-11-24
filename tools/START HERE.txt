@@ -78,6 +78,10 @@ names, the game's log folder, and under Import / Export one line of text that
 holds all your settings (paste it into a report, or into Waveband on another
 PC).
 
+During a fight the meter's bars and figure move at 60 frames a second, which
+keeps it light on the CPU. For a smoother look, switch on "Smoother meter:
+120 frames a second" under Settings, DPS Meter (it costs a little more CPU).
+
 
 WHAT IT CAN AND CANNOT MEASURE
 ------------------------------

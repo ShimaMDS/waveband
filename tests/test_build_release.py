@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 import zipfile
+from unittest import mock
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tools"))
 import build_release  # noqa: E402
@@ -98,6 +99,49 @@ class SourceTest(unittest.TestCase):
             target = os.path.join(folder, "out")
             build_release.copy_python(tools, target)
             self.assertEqual(sorted(os.listdir(target)), ["kept.py", "steps.js"])
+
+    def test_a_file_deleted_but_not_yet_in_git_is_left_out(self):
+        # it is still in git's list; copying it ended the build after PyInstaller's minutes
+        with tempfile.TemporaryDirectory() as folder:
+            import subprocess
+
+            tools = os.path.join(folder, "tools")
+            os.makedirs(tools)
+            for name in ("kept.py", "gone.py"):
+                with open(os.path.join(tools, name), "w") as fh:
+                    fh.write("# x\n")
+            subprocess.run(["git", "init", "-q"], cwd=folder, check=True)
+            subprocess.run(["git", "add", "tools"], cwd=folder, check=True)
+            os.remove(os.path.join(tools, "gone.py"))
+            target = os.path.join(folder, "out")
+            build_release.copy_python(tools, target)
+            self.assertEqual(os.listdir(target), ["kept.py"])
+
+    def test_changes_not_committed_are_found(self):
+        with tempfile.TemporaryDirectory() as folder:
+            import subprocess
+
+            def git(*args):
+                subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *args], cwd=folder,
+                               check=True, capture_output=True)
+
+            os.makedirs(os.path.join(folder, "wwmeter"))
+            for name in ("wwmeter/a.py", "wwmeter/b.py", "wwmeter/c.py", "run.bat", "notes.md"):
+                with open(os.path.join(folder, name), "w") as fh:
+                    fh.write("# x\n")
+            git("init", "-q")
+            git("add", ".")
+            git("commit", "-q", "-m", "x")
+            with open(os.path.join(folder, "wwmeter", "a.py"), "a") as fh:
+                fh.write("# edited\n")
+            os.remove(os.path.join(folder, "wwmeter", "b.py"))
+            git("mv", "wwmeter/c.py", "wwmeter/d.py")
+            with open(os.path.join(folder, "notes.md"), "a") as fh:
+                fh.write("# not in a release\n")
+            with open(os.path.join(folder, "wwmeter", "new.py"), "w") as fh:
+                fh.write("# never added\n")
+            with mock.patch.object(build_release, "ROOT", folder):
+                self.assertEqual(build_release.uncommitted(), ["wwmeter/a.py", "wwmeter/b.py", "wwmeter/d.py"])
 
     def test_this_checkout_has_its_tools_tracked(self):
         names = build_release.tracked(os.path.join(build_release.ROOT, "tools"))

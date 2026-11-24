@@ -13,6 +13,8 @@ nuget.org into a cache folder, then:
   with its parameters.
 
 Run it again only to move to another SDK version; the written module is committed.
+``--loader-only`` fetches just the DLL and its license, for a git checkout (``lib\\`` is not
+committed); ``run.bat`` does that by itself when the DLL is missing.
 """
 
 from __future__ import annotations
@@ -45,6 +47,8 @@ WANTED = (
     "ICoreWebView2ExecuteScriptCompletedHandler",
     "ICoreWebView2NavigationCompletedEventHandler",
     "ICoreWebView2NavigationCompletedEventArgs",
+    "ICoreWebView2ProcessFailedEventHandler",
+    "ICoreWebView2ProcessFailedEventArgs",
 )
 
 # C type (as written in the header, pointers stripped) -> ctypes expression
@@ -212,6 +216,9 @@ def write(vtables: dict, iids: dict) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--cache", default=os.path.join(ROOT, "TMP", "webview2-sdk"))
+    parser.add_argument("--loader-only", action="store_true",
+                        help="only fetch WebView2Loader.dll and its license (what run.bat does "
+                             "in a git checkout); leave wwmeter\\webview2_com.py as committed")
     args = parser.parse_args()
     package = fetch(args.cache)
     with zipfile.ZipFile(package) as z:
@@ -227,6 +234,8 @@ def main() -> int:
             with open(path, "wb") as f:
                 f.write(data)
     print(f"WebView2Loader.dll and LICENSE.txt are in {OUT_LIB}")
+    if args.loader_only:
+        return 0
     vtables, iids = parse(header)
     write(vtables, iids)
     return 0
