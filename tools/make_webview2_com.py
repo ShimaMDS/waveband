@@ -47,6 +47,8 @@ WANTED = (
     "ICoreWebView2ExecuteScriptCompletedHandler",
     "ICoreWebView2NavigationCompletedEventHandler",
     "ICoreWebView2NavigationCompletedEventArgs",
+    "ICoreWebView2ProcessFailedEventHandler",
+    "ICoreWebView2ProcessFailedEventArgs",
 )
 
 # C type (as written in the header, pointers stripped) -> ctypes expression

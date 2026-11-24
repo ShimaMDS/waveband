@@ -114,6 +114,33 @@ def screens() -> list[tuple[int, int, int, int]]:
     return [tuple(rect) for _, _, rect in win32api.EnumDisplayMonitors()]
 
 
+def screen_scales() -> list[tuple[tuple[int, int, int, int], float]]:
+    """Every monitor's rectangle in screen pixels, with its display scale (1.5 at 150%)."""
+    import win32api
+
+    found = []
+    for handle, _, rect in win32api.EnumDisplayMonitors():
+        dpi_x, dpi_y = ctypes.c_uint(), ctypes.c_uint()
+        try:
+            hr = ctypes.windll.shcore.GetDpiForMonitor(int(handle), 0, ctypes.byref(dpi_x), ctypes.byref(dpi_y))
+        except OSError:
+            hr = -1
+        found.append((tuple(rect), dpi_x.value / 96 if hr == 0 and dpi_x.value else 1.0))
+    return found
+
+
+def from_qt_pixels(x: int, y: int,
+                   monitors: list[tuple[tuple[int, int, int, int], float]] | None = None) -> tuple[int, int]:
+    """A place saved by 0.3.1 and before, in Qt's pixels, in screen pixels. Qt keeps each
+    monitor's top-left corner where Windows has it and divides the rest by the monitor's scale
+    (measured with Qt 6.12, 2026-11-24: (1000, 600) on a 150% monitor at 0,0 is 1500, 900). A
+    place on no monitor stays as it is (and is then moved onto one, as any such place is)."""
+    for (left, top, right, bottom), scale in monitors if monitors is not None else screen_scales():
+        if left <= x < left + (right - left) / scale and top <= y < top + (bottom - top) / scale:
+            return round(left + (x - left) * scale), round(top + (y - top) * scale)
+    return x, y
+
+
 def on_a_screen(x: int, y: int, width: int, height: int,
                 rects: list[tuple[int, int, int, int]] | None = None) -> bool:
     """True when enough of a window there is on some screen to see it and get hold of it."""
@@ -156,6 +183,7 @@ class HotkeySet:
         self._names: dict[int, str] = {}  # hotkey ID -> the key as written, "F9"
         self._held: list[int] = []
         self._active = False  # whether the keys are wanted now: the game is in front
+        self.refused: list[str] = []  # keys Windows would not give the last time they were asked for
         self._load(keys)
 
     def _load(self, keys: dict[str, str]) -> None:
@@ -171,6 +199,7 @@ class HotkeySet:
         active = self._active
         self.set_active(False)
         self._load(keys)
+        self.refused = []
         if self._on_taken is not None:
             self._on_taken([])  # what was said about the old keys no longer holds
         self.set_active(active)
@@ -186,6 +215,7 @@ class HotkeySet:
                     self._held.append(hotkey_id)
                 else:
                     refused.append(self._names[hotkey_id])
+            self.refused = refused
             # A key Windows will not give is one another program holds. It would do nothing
             # here and say nothing, so the meter is told and says it.
             if self._on_taken is not None:
@@ -242,6 +272,9 @@ class Controls:
     app_actions: dict | None = None
     themes: Callable[[], list[str]] = field(default=lambda: [])
     theme_label: Callable[[str], str] = field(default=lambda name: name)
+    # whether a key reaches the meter: not refused by Windows (another program holds it), and
+    # not a bare key that the game, run as administrator, keeps from it. None: every key does
+    key_works: Callable[[str], bool] | None = None
 
     def _save(self) -> None:
         config_mod.save(self.cfg)
@@ -306,8 +339,9 @@ class Controls:
         Kept short (owner, 2026-11-18). What it leaves out has a hotkey (showing or hiding the
         meter, damage or percent, a new fight, the fight before or after, the one-line meter,
         moving it) or a place in the dashboard (What changed; Settings, The game, Update boss
-        HP tables). Moving is listed when it has no key, or to lock it again: without a key it
-        could not be reached at all.
+        HP tables). Moving is listed when it has no key that works (none set, one another
+        program holds, a bare key the game keeps from the meter), or to lock it again: without
+        it the meter could not be moved at all.
         """
         cfg = self.cfg
         keys = hotkey_names.bindings(cfg.hotkeys)
@@ -324,7 +358,8 @@ class Controls:
             entry("Hide from screenshots and streams", "capture", bool(cfg.hide_from_capture)),
             entry("Show the keybinds on the meter", "hints", bool(cfg.show_keys)),
         ]
-        if self.overlay.moving or not keys.get("move"):
+        move_key = keys.get("move", "")
+        if self.overlay.moving or not move_key or (self.key_works is not None and not self.key_works(move_key)):
             menu.append(entry("Move or resize the overlay", "move", bool(self.overlay.moving)))
         menu += [
             Item("Theme", children=lambda: [

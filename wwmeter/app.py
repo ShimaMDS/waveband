@@ -395,7 +395,8 @@ def run(cfg: Config, demo: bool = False, overlay: bool = True) -> int:
             from . import overlay_webview2
 
             try:
-                return overlay_webview2.run(*args, app_actions=app_actions)
+                return overlay_webview2.run(*args, app_actions=app_actions,
+                                            keys_need_ctrl_or_alt=keys_need_ctrl_or_alt)
             except overlay_webview2.Unavailable as why:
                 reason = f"WebView2 can't show the overlay ({why})"
             except Exception as fault:  # noqa: BLE001 - said below, then the meter stops cleanly

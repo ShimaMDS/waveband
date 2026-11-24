@@ -83,6 +83,89 @@ class BuildMenuTest(unittest.TestCase):
         finally:
             win32gui.DestroyMenu(menu)
 
+    def test_the_chosen_theme_has_a_bullet(self):
+        menu, _ = build_menu([Item("Wuwa", lambda: None, checked=False, radio=True),
+                              Item("Classic", lambda: None, checked=True, radio=True),
+                              Item("A tick box", lambda: None, checked=True)])
+        try:
+            kinds = [_menu_type(menu, i) & win32con.MFT_RADIOCHECK for i in range(3)]
+            self.assertEqual([bool(kind) for kind in kinds], [False, True, False])
+            self.assertTrue(win32gui.GetMenuState(menu, 1, win32con.MF_BYPOSITION) & win32con.MF_CHECKED)
+        finally:
+            win32gui.DestroyMenu(menu)
+
+
+def _menu_type(menu: int, position: int) -> int:
+    """An entry's fType (MFT_RADIOCHECK and the like), which GetMenuState doesn't give."""
+    class MENUITEMINFOW(ctypes.Structure):
+        _fields_ = [("cbSize", wintypes.UINT), ("fMask", wintypes.UINT), ("fType", wintypes.UINT),
+                    ("fState", wintypes.UINT), ("wID", wintypes.UINT), ("hSubMenu", wintypes.HMENU),
+                    ("hbmpChecked", wintypes.HBITMAP), ("hbmpUnchecked", wintypes.HBITMAP),
+                    ("dwItemData", ctypes.c_size_t), ("dwTypeData", wintypes.LPWSTR),
+                    ("cch", wintypes.UINT), ("hbmpItem", wintypes.HBITMAP)]
+
+    info = MENUITEMINFOW(cbSize=ctypes.sizeof(MENUITEMINFOW), fMask=0x100)  # MIIM_FTYPE
+    get = ctypes.windll.user32.GetMenuItemInfoW
+    get.argtypes = [wintypes.HMENU, wintypes.UINT, wintypes.BOOL, ctypes.POINTER(MENUITEMINFOW)]
+    if not get(menu, position, True, ctypes.byref(info)):
+        raise ctypes.WinError()
+    return info.fType
+
+
+class OldPlaceTest(unittest.TestCase):
+    """The meter's place in a settings file from 0.3.1 and before (Qt's scaled pixels)."""
+
+    MONITORS = [((0, 0, 2560, 1440), 1.5)]
+
+    def setUp(self):
+        import json
+        import os
+        import tempfile
+
+        from wwmeter import config
+
+        self.config, self.json = config, json
+        self.folder = tempfile.TemporaryDirectory()
+        self.addCleanup(self.folder.cleanup)
+        self.path = os.path.join(self.folder.name, "config.json")
+        mock.patch.object(config, "CONFIG_PATH", self.path).start()
+        mock.patch.object(overlay_common, "screen_scales", lambda: self.MONITORS).start()
+        self.addCleanup(mock.patch.stopall)
+
+    def load(self, data):
+        with open(self.path, "w", encoding="utf-8") as fh:
+            self.json.dump(data, fh)
+        return self.config.load()
+
+    def test_a_place_from_0_3_1_is_turned_into_screen_pixels_once(self):
+        from wwmeter.overlay_webview2 import _take_up_qt_place
+
+        cfg = self.load({"overlay_x": 1000, "overlay_y": 600, "seen_version": "0.3.1"})
+        self.assertEqual(cfg.overlay_pixels, "qt")
+        _take_up_qt_place(cfg)
+        self.assertEqual((cfg.overlay_x, cfg.overlay_y, cfg.overlay_pixels), (1500, 900, "screen"))
+        again = self.config.load()  # saved: the next start leaves it where it is
+        self.assertEqual((again.overlay_x, again.overlay_y, again.overlay_pixels), (1500, 900, "screen"))
+        _take_up_qt_place(again)
+        self.assertEqual((again.overlay_x, again.overlay_y), (1500, 900))
+
+    def test_a_file_a_0_3_2_beta_wrote_is_in_screen_pixels(self):
+        cfg = self.load({"overlay_x": 1000, "overlay_y": 600, "seen_version": "0.3.2-beta.2"})
+        self.assertEqual(cfg.overlay_pixels, "screen")
+
+    def test_a_file_from_before_versions_were_kept_is_qt(self):
+        self.assertEqual(self.load({"overlay_x": 10, "overlay_y": 10}).overlay_pixels, "qt")
+
+    def test_no_place_saved_is_left_alone(self):
+        from wwmeter.overlay_webview2 import _take_up_qt_place
+
+        cfg = self.load({"seen_version": "0.3.0"})
+        _take_up_qt_place(cfg)
+        self.assertEqual((cfg.overlay_x, cfg.overlay_y, cfg.overlay_pixels), (None, None, "screen"))
+
+    def test_a_new_file_is_in_screen_pixels(self):
+        self.assertEqual(self.config.Config(log_dir="").overlay_pixels, "screen")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -44,8 +44,9 @@ USUAL_FIGURES = ("dps", "share")
 
 # What the one line of text leaves out: where things are on this PC. The log folder's path can
 # hold the Windows user name, and the port is how this PC's browser reaches the meter. The
-# version last run is no setting: it is this PC's own record of which notes it has been shown.
-NOT_EXPORTED = ("log_dir", "port", "seen_version")
+# version last run is no setting: it is this PC's own record of which notes it has been shown,
+# and what the meter's place is counted in is this PC's own record of an old file.
+NOT_EXPORTED = ("log_dir", "port", "seen_version", "overlay_pixels")
 _LINE_PREFIX = "wwmeter1:"
 _LINE_LIMIT = 40_000  # characters of a pasted line; a real one is under a thousand
 _JSON_LIMIT = 200_000  # bytes it may unpack to

@@ -66,6 +66,17 @@ class HotkeySetTest(unittest.TestCase):
         self.assertEqual([key for _, _, key in user32.held.values()], [ord("M")])
         self.assertEqual(self.taken[-2], [])  # what was said about the old keys is taken back
 
+    def test_refused_keys_are_kept_until_rebound(self):
+        user32 = FakeUser32(taken={hotkeys.parse("Alt+F11")[1]})
+        keys = self.make({"toggle": "Alt+F8", "move": "Alt+F11"}, user32)
+        self.assertEqual(keys.refused, [])
+        keys.set_active(True)
+        self.assertEqual(keys.refused, ["Alt+F11"])
+        keys.set_active(False)
+        self.assertEqual(keys.refused, ["Alt+F11"])  # still another program's while the game is away
+        keys.rebind({"toggle": "Alt+F8", "move": "Ctrl+Alt+M"})
+        self.assertEqual(keys.refused, [])
+
     def test_unparsable_and_empty_keys_are_left_out(self):
         user32 = FakeUser32()
         keys = self.make({"toggle": "", "reset": "Banana", "move": "Alt+F11"}, user32)
@@ -85,6 +96,24 @@ class ScreenTest(unittest.TestCase):
         self.assertFalse(on_a_screen(200, 6000, 424, 380, self.SCREENS))
         self.assertFalse(on_a_screen(-1000, 100, 424, 380, self.SCREENS))
         self.assertFalse(on_a_screen(2500, 1420, 424, 380, self.SCREENS))  # 20 px showing: not enough
+
+
+class FromQtPixelsTest(unittest.TestCase):
+    # as Qt 6.12 placed windows, measured 2026-11-24 (QT_SCREEN_SCALE_FACTORS="1.5;1.25"): each
+    # monitor's top-left stays where Windows has it, the rest is divided by its scale
+    MONITORS = [((0, 0, 2560, 1440), 1.5), ((-2560, 0, 0, 1440), 1.25)]
+
+    def test_places_on_scaled_monitors(self):
+        self.assertEqual(overlay_common.from_qt_pixels(1000, 600, self.MONITORS), (1500, 900))
+        self.assertEqual(overlay_common.from_qt_pixels(100, 100, self.MONITORS), (150, 150))
+        self.assertEqual(overlay_common.from_qt_pixels(-2000, 300, self.MONITORS), (-1860, 375))
+
+    def test_at_100_percent_nothing_moves(self):
+        self.assertEqual(overlay_common.from_qt_pixels(1000, 600, [((0, 0, 2560, 1440), 1.0)]), (1000, 600))
+
+    def test_a_place_on_no_monitor_stays(self):
+        # beyond the 150% monitor's 1707 Qt pixels: left for on_a_screen to judge
+        self.assertEqual(overlay_common.from_qt_pixels(2000, 600, self.MONITORS), (2000, 600))
 
 
 class GameInFrontTest(unittest.TestCase):
@@ -200,6 +229,15 @@ class ControlsTest(unittest.TestCase):
         self.assertTrue(listed())  # to lock it again
         self.overlay.moving = False
         self.cfg.hotkeys = dict(self.cfg.hotkeys, move="")
+        self.assertTrue(listed())
+
+    def test_moving_is_listed_when_its_key_does_not_work(self):
+        # a key set but refused (another program holds it) or kept from the meter by the game
+        listed = lambda: any(i.text == "Move or resize the overlay" for i in self.controls.items())  # noqa: E731
+        works = {"Alt+F11": True}
+        self.controls.key_works = lambda name: works.get(name, True)
+        self.assertFalse(listed())
+        works["Alt+F11"] = False
         self.assertTrue(listed())
 
     def test_submenus_are_made_when_opened(self):
