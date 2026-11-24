@@ -10,7 +10,7 @@ to hold before one goes out.
    are written for users. Run the tests (one fails when the top section is not
    for the version in the source), and bring this file and `tools\START HERE.txt` (the
    testers' one-page guide) up to date.
-2. Once per clone, `.venv\Scripts\python tools\make_webview2_com.py` fetches WebView2's loader
+2. Once per clone, `run.bat` (or `.venv\Scripts\python tools\make_webview2_com.py --loader-only`) fetches WebView2's loader
    into `lib\webview2\` (the build stops without it). Then, in a fresh environment, outside this
    folder:
    `python -m venv build-env`, then

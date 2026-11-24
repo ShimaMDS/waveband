@@ -6,7 +6,8 @@
   of a copy of Chromium that came with Waveband (Qt WebEngine, gone from Waveband from this
   version on). It looks and works as before: on top of the game,
   clicks pass through it, hidden from screenshots if you choose, Alt+F11 to move and resize it.
-  The download is about 57 MB instead of 181. If the meter doesn't show, *Waveband self-test*
+  The download is about 57 MB instead of 181. If WebView2 stops while you play (ended in Task
+  Manager, say), the meter starts it again. If the meter doesn't show, *Waveband self-test*
   says why in its "overlay window" line.
 - **The meter is far lighter on the CPU during a fight**: its bars and figure now move at 60
   frames a second instead of your monitor's refresh rate, and the bars no longer make the page
@@ -16,7 +17,8 @@
   hiding between fights and from screenshots, the line of keys, the theme, the dashboard,
   Settings and Waveband's updates. The rest has a keybind (showing or hiding the meter, damage
   or percent, a new fight, the fight before or after, the one-line meter, moving it) or is in
-  the dashboard: What changed, and "Update boss HP tables" under Settings, The game.
+  the dashboard: What changed, and "Update boss HP tables" under Settings, The game. If your
+  move key doesn't reach Waveband, the menu lists "Move or resize the overlay" too.
 
 ## 0.3.1
 
